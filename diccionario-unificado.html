@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procesador de diccionario — Comandarina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #E1E1F5; }
+  :root {
+    --naranja: #FF5023;
+    --navy: #3938A0;
+    --fondo: #E1E1F5;
+    --texto: #3B3B3B;
+    --muted: #9ca3af;
+    --border: rgba(57,56,160,0.12);
+  }
+  #vc-app { font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: var(--texto); max-width: 1000px; background: var(--fondo); padding: 20px; border-radius: 16px; }
+  #vc-app * { box-sizing: border-box; font-family: inherit; }
+
+  .vc-hero { position: relative; overflow: hidden; background: var(--naranja); border-radius: 12px; padding: 28px 30px; margin-bottom: 20px; }
+  .vc-hero::before { content: ''; position: absolute; top: -50px; right: -30px; width: 170px; height: 170px; border-radius: 50%; background: rgba(255,255,255,0.14); }
+  .vc-hero::after { content: ''; position: absolute; bottom: -55px; right: 90px; width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.10); }
+  .vc-h1 { position: relative; font-size: 24px; font-weight: 800; margin: 0 0 6px; color: #fff; letter-spacing: -0.2px; }
+  .vc-sub { position: relative; font-size: 13.5px; font-weight: 400; color: #fff; opacity: .92; margin: 0; max-width: 640px; line-height: 1.5; }
+  .vc-eyebrow { position: relative; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--naranja); background: #fff; border-radius: 20px; padding: 3px 10px; margin-bottom: 10px; }
+
+  .vc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .vc-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .vc-card label { display: block; font-size: 12.5px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .vc-card input[type=file] { font-size: 11px; width: 100%; color: var(--texto); }
+  .vc-status { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 8px; min-height: 14px; }
+  .vc-status.ok { color: var(--naranja); }
+
+  .vc-btn { font-family: 'Barlow', sans-serif; background: var(--naranja); color: #fff; border: none; border-radius: 8px; padding: 11px 22px; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+  .vc-btn:hover { opacity: .88; }
+  .vc-btn:disabled { background: var(--muted); cursor: not-allowed; }
+  .vc-btn.navy { background: var(--navy); }
+  .vc-btn.ghost { background: #fff; color: var(--texto); border: 1.5px solid var(--muted); padding: 6px 14px; font-size: 12px; font-weight: 600; }
+  .vc-btn.ghost:hover { background: #f3f4f6; opacity: 1; }
+
+  .vc-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 22px 0; }
+  .vc-metric { border-radius: 12px; padding: 14px 16px; background: #fff; border: 1px solid var(--border); }
+  .vc-metric .n { font-size: 26px; font-weight: 800; display: block; color: var(--naranja); line-height: 1.1; }
+  .vc-metric .l { font-size: 11.5px; font-weight: 600; color: var(--texto); }
+
+  .vc-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .vc-section-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fff; cursor: pointer; gap: 10px; border-bottom: 1px solid var(--border); }
+  .vc-section-head h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--navy); display: flex; align-items: center; }
+  .vc-section-body { padding: 14px 16px; display: none; }
+  .vc-section-body.open { display: block; }
+  .vc-note { font-size: 11.5px; color: var(--muted); margin: 0 0 10px; }
+
+  .vc-pill { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 11px; border-radius: 20px; margin-left: 10px; }
+  .vc-pill.paid { background: #dcfce7; color: #15803d; }
+  .vc-pill.pending { background: #fef9c3; color: #854d0e; }
+  .vc-pill.refunded { background: #f3e8ff; color: #7e22ce; }
+  .vc-pill.cancelled { background: #fee2e2; color: #991b1b; }
+
+  .vc-table-wrap { max-height: 260px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table.vc-t { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+  table.vc-t thead th { position: sticky; top: 0; background: var(--navy); color: #fff; text-align: left; padding: 8px 9px; font-weight: 700; }
+  table.vc-t td { padding: 6px 9px; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--texto); }
+  table.vc-t tr:nth-child(even) td { background: #FAFAFF; }
+
+  .vc-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .vc-tab { font-family: 'Barlow', sans-serif; background: #fff; color: var(--texto); border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .vc-tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .vc-tab:not(.active):hover { background: var(--fondo); }
+
+  .vc-rule-card { background: var(--fondo); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .vc-rule-card h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--navy); }
+  .vc-rule-card p { margin: 0; font-size: 12.5px; color: var(--texto); line-height: 1.5; }
+  .vc-log { font-size: 11.5px; font-weight: 600; color: var(--navy); margin-left: 12px; }
+  .vc-inputrow input[type=text] { font-family: inherit; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/tools/estilos/diccionario.css">
+</head>
+<body>
+
+<div id="vc-app">
+  <div class="vc-hero">
+    <span class="vc-eyebrow">Fudo ↔ Odoo</span>
+    <p class="vc-h1">Procesador de diccionario</p>
+  </div>
+
+  <div class="vc-tabs">
+    <button class="vc-tab active" id="tab-etapa1" onclick="vcSetEtapa(1)">Etapa 1 · Odoo</button>
+    <button class="vc-tab" id="tab-etapa2" onclick="vcSetEtapa(2)">Etapa 2 · Dash</button>
+    <button class="vc-tab" id="tab-etapa3" onclick="vcSetEtapa(3)">Próximamente</button>
+  </div>
+
+  <div id="etapa1-panel">
+    <div class="vc-card" style="max-width:340px; margin-bottom:16px;">
+      <label>Compañía</label>
+      <select id="sel-compania" onchange="vcSetCompania(this.value)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; color:var(--texto); background:#fff;">
+        <option value="comandarina_srl">Comandarina S.R.L. (Argentina + Others)</option>
+        <option value="anser_indicus">Anser Indicus SpA (Chile)</option>
+        <option value="comandarina_mx">Comandarina SA de CV (México)</option>
+        <option value="fudo_group">Fudo Group LLC</option>
+      </select>
+    </div>
+
+    <div id="etapa1-comandarina_srl">
+      <div class="vc-grid">
+        <div class="vc-card">
+          <label>1. Odoo (Contacto res_partner) — .xlsx o .csv, con External ID, Tipo de Identificación, Activo y País</label>
+          <input type="file" id="f-odoo" accept=".xlsx,.csv" />
+          <div class="vc-status pending" id="s-odoo">Sin cargar</div>
+        </div>
+        <div class="vc-card">
+          <label>2. Dash — Accounts + Billing (.zip), sin filtro de país</label>
+          <input type="file" id="f-dashzip" accept=".zip" />
+          <div class="vc-status pending" id="s-dashzip">Sin cargar</div>
+        </div>
+        <div class="vc-card">
+          <label>3. Metabase AFIP/ARCA (xlsx) — se usa solo para Argentina</label>
+          <input type="file" id="f-metabase" accept=".xlsx" />
+          <div class="vc-status pending" id="s-metabase">Sin cargar</div>
+        </div>
+        <div class="vc-card">
+          <label>4. Admin emails (csv), sin filtro de país</label>
+          <input type="file" id="f-admin" accept=".csv" />
+          <div class="vc-status pending" id="s-admin">Sin cargar</div>
+        </div>
+      </div>
+
+      <button class="vc-btn" id="btn-process" disabled>Procesar archivos</button>
+      <span class="vc-log" id="proc-log"></span>
+
+      <div id="results" style="margin-top:24px; display:none;"></div>
+    </div>
+
+    <div id="etapa1-proximamente" style="display:none;">
+      <div class="vc-card" style="text-align:center; padding:36px 20px; color:var(--muted);">
+        <p style="margin:0; font-size:14px; font-weight:600;">🚧 Próximamente</p>
+        <p style="margin:6px 0 0; font-size:12.5px;">Todavía no está armado el procesamiento para esta compañía. Pedilo cuando lo necesites y lo sumamos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="etapa2-panel" style="display:none;">
+    <div class="vc-grid">
+      <div class="vc-card">
+        <label>1. Odoo actualizado (Contacto res_partner) — .xlsx o .csv, con dirección completa</label>
+        <input type="file" id="f2-odoo" accept=".xlsx,.csv" />
+        <div class="vc-status pending" id="s2-odoo">Sin cargar</div>
+      </div>
+      <div class="vc-card">
+        <label>2. Dash — Accounts + Billing (.zip)</label>
+        <input type="file" id="f2-dashzip" accept=".zip" />
+        <div class="vc-status pending" id="s2-dashzip">Sin cargar</div>
+      </div>
+    </div>
+
+    <button class="vc-btn" id="btn-process-2" disabled>Procesar archivos</button>
+    <span class="vc-log" id="proc-log-2"></span>
+
+    <div id="results-2" style="margin-top:24px; display:none;"></div>
+  </div>
+
+  <div id="etapa3-panel" style="display:none;">
+    <p class="vc-note" style="margin-top:0;">
+      Ideas y pedidos que fueron surgiendo pero todavía no se programaron — se editan directo en el
+      <a href="https://docs.google.com/spreadsheets/d/1e6qAnhdD1PQefr--q0vfg-6tp1dechYXiNKY0lldV8M/edit?gid=0#gid=0" target="_blank" style="color:var(--navy);font-weight:700;">Google Sheet "Próximamente"</a>
+      (agregar, editar o borrar filas ahí, sin tocar código) — <button class="vc-btn ghost" onclick="cargarProximamente()" style="padding:4px 12px;">Actualizar</button>
+    </p>
+    <div id="proximamente-status" class="vc-log" style="margin-left:0;"></div>
+    <div id="proximamente-cards"></div>
+  </div>
+
+  <div class="vc-section" style="margin-top:24px;" id="sec-reglas-wrap">
+    <div class="vc-section-head" onclick="vcToggle('sec-reglas')">
+      <h3>Reglas activas</h3>
+      <span class="vc-btn ghost">Ver</span>
+    </div>
+    <div class="vc-section-body" id="sec-reglas">
+      <p class="vc-note" style="margin-top:0;">Esto es de solo lectura: refleja la lógica que corre hoy en esta versión del archivo. Para cambiar una regla no se edita acá — se pide el cambio directamente y se sube el archivo actualizado a GitHub, así todo el equipo ve siempre la misma versión y queda el historial en los commits del repo.</p>
+      <div id="reglas-cards"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const REGLAS_ETAPA1 = [
+    { titulo: 'Corrida única: universos', texto: 'Se cargan los reportes de Dash (Accounts + Billing) y de admins SIN filtro de país. Cada cuenta se rutea por el País de Accounts: Argentina → perfil Argentina; Chile, México, Brasil y Colombia → fuera de alcance (tienen su propio proceso, no se procesan); el resto → perfil Others (clientes del exterior que pagan por PayPal). Los dos universos van a la misma compañía de Odoo (COMANDARINA S. R. L.). Un registro de Billing solo se usa si es del mismo universo que la cuenta. Si el zip de Dash o admin_emails vienen filtrados por país (se lee de los filtros que traen arriba del encabezado), o si algún universo queda con 0 cuentas, se avisa al cargar el archivo y en un banner rojo arriba de los resultados.' },
+    { titulo: 'Export de Odoo: columnas obligatorias', texto: 'Al cargar el archivo de Odoo se controla que estén Referencia, Nombre, NIF (o Número de Identificación), Tipo de Identificación, Correo electrónico, Activo, Responsabilidad (ARCA/AFIP) y la segunda columna "ID" (External ID). Si falta alguna, no se puede procesar: hay que volver a exportar con la vista completa. Los Output 2 y 3 salen con los mismos nombres de columna que trae el export, para que Odoo los reconozca solos.' },
+    { titulo: 'Cuentas internas — exclusión previa (los dos universos)', texto: 'Si el Estado comercial es "Activo" y el dominio del mail del admin elegido es exactamente fu.do, fudo.com, fudo.cl, fudo o deli.com.br, la cuenta se excluye del análisis (no se crea ni modifica nada en Odoo) y se muestra en el banner azul. Excepciones confirmadas a mano que nunca se marcan como internas: 154948 (tienda_cholita).' },
+    { titulo: 'Referencia duplicada y contactos "_old" (los dos universos)', texto: 'Los contactos con Referencia terminada en "_old" (bajas de corridas anteriores) no participan del cruce. Si una Referencia aparece en más de un contacto, la cuenta va a Excepciones y no genera filas.' },
+    { titulo: 'Cambio de país (aviso)', texto: 'Si el País del contacto en Odoo no coincide con el de la cuenta en Dash (distinto universo, o distinto país dentro de Others después de normalizarlo), se avisa en el banner naranja y la cuenta se procesa igual con el país de Dash. Los contactos sin País en Odoo no se controlan.' },
+    { titulo: 'Mejor admin — cada universo con su criterio', texto: 'Argentina: 1) mail válido, 2) más logins, 3) login más reciente. Others: 1) válido y con login de menos de 3 meses, 2) válido, 3) login reciente aunque sea inválido, 4) el resto; dentro de cada nivel, más logins. Mail válido = sin espacios, sin tildes/ñ/ü y con forma usuario@dominio.ext.' },
+    { titulo: 'Regla 1 / 1b — OK o reactivar', texto: 'Hay Billing con Código, el NIF de Odoo coincide y el mail coincide (o Billing no trae Email: se respeta el de Odoo). Activo → sin acción. Archivado → se reactiva (Activo = TRUE). Comparación del NIF: Argentina por dígitos (CUIT/DNI); Others por contenido, ignorando el prefijo ISO2 y los ceros a la izquierda.' },
+    { titulo: 'Regla 2 — Actualizar mail (los dos universos)', texto: 'Hay Billing, el NIF coincide y Billing trae un Email distinto al de Odoo → se actualiza solo el mail y se pone Activo = TRUE (reactiva si estaba archivado). Si Billing viene sin Email, no se toca el mail de Odoo.' },
+    { titulo: 'Regla 3a — Baja + Alta', texto: 'Hay Billing, el NIF no coincide y el NIF de Odoo no está vacío (otra identidad fiscal) → baja del contacto viejo (Referencia y enlace con sufijo "_old", Activo = FALSE) en el Output 2 y alta nueva con datos de Billing en el Output 3. Si el alta no pasa la validación de mail, la baja sale igual: revisar el banner amarillo antes de importar.' },
+    { titulo: 'Regla 3b — Completar NIF vacío', texto: 'Hay Billing, el NIF no coincide y el NIF de Odoo está vacío → se actualiza el mismo contacto. Argentina: Nombre = Razón social, NIF = Código, Tipo de Billing (CUIT si viene vacío), situación fiscal mapeada, Activo = TRUE. Others: NIF = ISO2 + Código sin ceros, Tipo = Passport, mail de Billing (o el de Odoo si viene vacío).' },
+    { titulo: 'Regla 4a / 4b — Metabase (solo Argentina)', texto: 'Sin Billing y con Metabase aprobado. 4a (existe en Odoo): compara NIF contra el CUIT de Metabase y el mail contra el admin; solo actualiza lo que difiere (Nombre y Responsabilidad quedan como en Odoo). 4b (no existe): alta con Razón social y CUIT de Metabase y el mail del admin.' },
+    { titulo: 'Regla 2b — Actualizar nombre (sin Billing)', texto: 'Existe en Odoo, sin Billing (ni Metabase en Argentina) y el contacto NO tiene NIF → si el nombre cambió en Dash, se actualiza. Formato: Argentina "NombreDash"; Others "ID/NombreDash". Si el contacto ya tiene NIF, el nombre no se toca.' },
+    { titulo: 'Regla 2c — Mantenimiento del mail admin (sin Billing)', texto: 'El mail de Odoo sigue vigente si aparece en el reporte de admins de la cuenta, es válido y tiene login de menos de 3 meses. Si no, se reemplaza priorizando validez sobre recencia (válido y reciente, válido, reciente, más logins). Si cambian nombre y mail a la vez, sale una sola fila. Si la cuenta no tiene ningún admin, se avisa y no se fuerza ningún mail.' },
+    { titulo: 'Regla 5 / 6 — Altas', texto: '5: hay Billing y no existe en Odoo → alta con datos de Billing (Argentina: CUIT o DNI, con calle y ciudad solo si es DNI; Others: Passport, NIF con ISO2, calle y ciudad siempre). 6: sin Billing (ni Metabase) y no existe → alta genérica con el mail del admin (Argentina: Sigd, sin NIF, nombre de Dash; Others: Passport, sin NIF, "ID/NombreDash").' },
+    { titulo: 'Valores fijos por universo', texto: 'Argentina: País = Argentina, Responsabilidad en altas = Consumidor Final (ARCA la actualiza sola). Others: Tipo de identificación = Passport, Responsabilidad = Cliente del Exterior (en altas y actualizaciones), país normalizado a la tabla de Odoo. Los dos: Compañía = COMANDARINA S. R. L., Tipo de compañía = Compañía, Idioma = Spanish / Español, Enlace = https://dash.fu.do/accounts/{ID}.' },
+    { titulo: 'Validaciones antes de descargar', texto: 'Mail: si el mail final de una fila de los Output 2 o 3 tiene problemas (vacío, sin admin, tildes, espacios o formato inválido), la fila sale del archivo y se lista en el banner amarillo. Las bajas no se validan. CUIT/DNI (Argentina): dígito verificador del CUIT y largo del DNI; los inválidos quedan en el archivo con el NIF en rojo, porque Odoo bloquea el import entero.' },
+    { titulo: 'Salidas', texto: 'Output 1: backup con una fila por cuenta procesada. Output 2: actualizaciones con columnas fijas (External ID, Referencia, Nombre, NIF, Tipo, Mail, Responsabilidad, Enlace, Activo TRUE/FALSE). Output 3: altas con la plantilla de Comandarina. Los dos universos van juntos en cada archivo, con las columnas "Grupo" y "Universo" (no se importan).' }
+  ];
+
+  const REGLAS_ETAPA2 = [
+    { titulo: 'Condición', texto: 'La cuenta existe en el reporte de Accounts de Dash (Argentina), la Referencia existe en Odoo, Odoo.NIF (Código) tiene valor, y Billing.Código está vacío para esa cuenta → se arma la fila de import para Dash. No depende de qué regla de la Etapa 1 la generó (Metabase, carga manual, etc.), solo del estado final en Odoo vs Dash. Si la cuenta no aparece en Accounts, no se toca nada aunque Odoo tenga el NIF cargado.' },
+    { titulo: 'Contactos excluidos', texto: 'Se ignoran los contactos Archivados en Odoo y las Referencias con sufijo "_old" (bajas de una corrida anterior de la Etapa 1) — no participan del cruce. Este filtro ya está aplicado siempre, aunque el número total resultante sea grande: representa el acumulado histórico de todas las correcciones hechas en Odoo que Dash todavía no tiene, no solo las de la última corrida.' },
+    { titulo: 'Cuentas internas (Fudo/Deli) — limitación', texto: 'La Etapa 2 no vuelve a chequear el Estado comercial ni el mail de admin (no carga esos archivos acá). Si una cuenta interna llegó a tener NIF cargado en Odoo antes de que existiera este chequeo, podría aparecer en el resultado — revisar manualmente si aparece algo sospechoso.' },
+    { titulo: 'Mapeo de campos (Odoo → Dash)', texto: 'ID = Referencia. Tipo de identificación = Odoo.Tipo de Identificación (ya sin el sufijo " (AR)"). Código = Odoo.NIF. Razón social = Odoo.Nombre. Ciudad = Odoo.Ciudad. Estado = Odoo.Provincia. Domicilio = Odoo.Calle. Código postal = Odoo.C.P. Email = Odoo.Correo electrónico.' },
+    { titulo: 'Mapeo de situación fiscal (Odoo → Dash)', texto: 'IVA Responsable Inscripto → Responsable inscripto. Responsable Monotributo → Monotributo. Consumidor Final → Consumidor final. IVA Sujeto Exento → Exento. (Es el mapeo inverso al de la Etapa 1). Excepción: si da "Consumidor final" pero la cuenta ya tiene un NIF real cargado, se corrige a "Monotributo" (inconsistencia típica).' },
+    { titulo: 'Limpieza de texto para el CSV de Dash', texto: 'Se sacan las comillas (" y \\\') de todos los campos, y las comas dentro de un campo se reemplazan por punto y coma — para que no rompan el formato CSV separado por comas que pide Dash. Excepción: la Razón social va sin punto y coma ni coma (los de Odoo en el nombre se reemplazan por un espacio).' },
+    { titulo: 'Todos los campos son obligatorios', texto: 'Dash exige los 9 campos del template (ID, Tipo de identificación, Código, Razón social, Ciudad, Estado, Domicilio, Situación ante el impuesto, Email, Código postal). Si a una cuenta le falta alguno, no entra al archivo de import: va al archivo de revisión.' },
+    { titulo: 'Dos archivos de salida', texto: 'Import a Dash: filas 100% completas, listas para subir (CSV separado por comas). Revisar antes de importar: filas con algún dato faltante, con cada campo vacío marcado puntualmente (ej. "FALTA CIUDAD") para completar a mano.' }
+  ];
+
+  // "Próximamente" ya no es una lista fija en el código: se carga en vivo desde el Google Sheet
+  // (ver cargarProximamente() más abajo), así se puede editar sin tocar el archivo.
+
+  // --- Descompresor DEFLATE propio (reemplaza pako), sin dependencias externas ---
+  function inflateRaw(input){
+    const LENGTH_BASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+    const LENGTH_EXTRA = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+    const DIST_BASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+    const DIST_EXTRA = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+    const CLC_ORDER = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+    let bytePos = 0, bitBuf = 0, bitCount = 0;
+    function getBit(){ if(bitCount===0){ bitBuf = input[bytePos++]; bitCount = 8; } const b = bitBuf & 1; bitBuf >>= 1; bitCount--; return b; }
+    function getBits(n){ let v=0; for(let i=0;i<n;i++) v |= getBit() << i; return v; }
+    function alignByte(){ bitBuf=0; bitCount=0; }
+    function buildTree(lengths, num){
+      const counts = new Uint16Array(16);
+      const symbols = new Uint16Array(num);
+      for(let i=0;i<num;i++) counts[lengths[i]]++;
+      counts[0] = 0;
+      const offs = new Uint16Array(16);
+      for(let i=1;i<16;i++) offs[i] = offs[i-1] + counts[i-1];
+      for(let i=0;i<num;i++){ if(lengths[i]) symbols[offs[lengths[i]]++] = i; }
+      return { counts, symbols };
+    }
+    function decodeSymbol(tree){
+      let base=0, offs=0;
+      for(let len=1; len<=15; len++){
+        offs = 2*offs + getBit();
+        base += tree.counts[len];
+        offs -= tree.counts[len];
+        if(offs < 0) return tree.symbols[base+offs];
+      }
+      throw new Error('Huffman code invalido');
+    }
+    let out = new Uint8Array(Math.max(1024, input.length * 4));
+    let outPos = 0;
+    function ensure(n){
+      if(outPos + n > out.length){
+        let newLen = out.length * 2;
+        while(newLen < outPos + n) newLen *= 2;
+        const bigger = new Uint8Array(newLen);
+        bigger.set(out.subarray(0, outPos));
+        out = bigger;
+      }
+    }
+    function inflateStoredBlock(){
+      alignByte();
+      const len = input[bytePos] | (input[bytePos+1] << 8);
+      bytePos += 4;
+      ensure(len);
+      for(let i=0;i<len;i++) out[outPos++] = input[bytePos++];
+    }
+    function inflateBlockData(lt, dt){
+      for(;;){
+        const sym = decodeSymbol(lt);
+        if(sym === 256) return;
+        if(sym < 256){ ensure(1); out[outPos++] = sym; continue; }
+        const li = sym - 257;
+        const length = LENGTH_BASE[li] + getBits(LENGTH_EXTRA[li]);
+        const dsym = decodeSymbol(dt);
+        const dist = DIST_BASE[dsym] + getBits(DIST_EXTRA[dsym]);
+        ensure(length);
+        let from = outPos - dist;
+        for(let i=0;i<length;i++){ out[outPos++] = out[from++]; }
+      }
+    }
+    let fixedLt=null, fixedDt=null;
+    function getFixedTrees(){
+      if(fixedLt) return [fixedLt, fixedDt];
+      const litLengths = new Uint8Array(288);
+      for(let i=0;i<144;i++) litLengths[i]=8;
+      for(let i=144;i<256;i++) litLengths[i]=9;
+      for(let i=256;i<280;i++) litLengths[i]=7;
+      for(let i=280;i<288;i++) litLengths[i]=8;
+      fixedLt = buildTree(litLengths, 288);
+      const distLengths = new Uint8Array(30).fill(5);
+      fixedDt = buildTree(distLengths, 30);
+      return [fixedLt, fixedDt];
+    }
+    function inflateDynamicBlock(){
+      const hlit = getBits(5) + 257;
+      const hdist = getBits(5) + 1;
+      const hclen = getBits(4) + 4;
+      const clcLengths = new Uint8Array(19);
+      for(let i=0;i<hclen;i++) clcLengths[CLC_ORDER[i]] = getBits(3);
+      const clcTree = buildTree(clcLengths, 19);
+      const lengths = new Uint8Array(hlit + hdist);
+      let i=0;
+      while(i < hlit + hdist){
+        const sym = decodeSymbol(clcTree);
+        if(sym < 16){ lengths[i++] = sym; }
+        else if(sym === 16){ const rep=getBits(2)+3; const prev=lengths[i-1]; for(let r=0;r<rep;r++) lengths[i++]=prev; }
+        else if(sym === 17){ const rep=getBits(3)+3; for(let r=0;r<rep;r++) lengths[i++]=0; }
+        else { const rep=getBits(7)+11; for(let r=0;r<rep;r++) lengths[i++]=0; }
+      }
+      const lt = buildTree(lengths.subarray(0, hlit), hlit);
+      const dt = buildTree(lengths.subarray(hlit), hdist);
+      inflateBlockData(lt, dt);
+    }
+    for(;;){
+      const final = getBit();
+      const type = getBits(2);
+      if(type === 0) inflateStoredBlock();
+      else if(type === 1){ const [lt,dt] = getFixedTrees(); inflateBlockData(lt, dt); }
+      else if(type === 2) inflateDynamicBlock();
+      else throw new Error('Tipo de bloque invalido');
+      if(final) break;
+    }
+    return out.subarray(0, outPos);
+  }
+
+  const state = { odoo:null, accounts:null, billing:null, metabase:null, admin:null };
+
+  function readZipEntries(arrayBuffer){
+    const buf = new Uint8Array(arrayBuffer);
+    const dv = new DataView(arrayBuffer);
+    let eocd = -1;
+    for(let i = buf.length - 22; i >= 0; i--){
+      if(buf[i]===0x50 && buf[i+1]===0x4b && buf[i+2]===0x05 && buf[i+3]===0x06){ eocd = i; break; }
+    }
+    if(eocd === -1) throw new Error('No se encontró el índice del zip (EOCD)');
+    const cdEntries = dv.getUint16(eocd + 10, true);
+    let offset = dv.getUint32(eocd + 16, true);
+    const entries = [];
+    for(let i=0; i<cdEntries; i++){
+      const sig = dv.getUint32(offset, true);
+      if(sig !== 0x02014b50) break;
+      const compressionMethod = dv.getUint16(offset + 10, true);
+      const compressedSize = dv.getUint32(offset + 20, true);
+      const uncompressedSize = dv.getUint32(offset + 24, true);
+      const fnLen = dv.getUint16(offset + 28, true);
+      const extraLen = dv.getUint16(offset + 30, true);
+      const commentLen = dv.getUint16(offset + 32, true);
+      const localHeaderOffset = dv.getUint32(offset + 42, true);
+      const name = new TextDecoder('utf-8').decode(buf.slice(offset + 46, offset + 46 + fnLen));
+      entries.push({name, compressionMethod, compressedSize, uncompressedSize, localHeaderOffset});
+      offset += 46 + fnLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+
+  function extractZipEntryText(arrayBuffer, entry){
+    const buf = new Uint8Array(arrayBuffer);
+    const dv = new DataView(arrayBuffer);
+    const lo = entry.localHeaderOffset;
+    const fnLen = dv.getUint16(lo + 26, true);
+    const extraLen = dv.getUint16(lo + 28, true);
+    const dataStart = lo + 30 + fnLen + extraLen;
+    const compressed = buf.slice(dataStart, dataStart + entry.compressedSize);
+    let out;
+    if(entry.compressionMethod === 0) out = compressed;
+    else if(entry.compressionMethod === 8) out = inflateRaw(compressed);
+    else throw new Error('Método de compresión no soportado (' + entry.compressionMethod + ')');
+    return new TextDecoder('utf-8').decode(out);
+  }
+
+  function setStatus(id, text, ok){
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'vc-status' + (ok ? ' ok' : '');
+  }
+  function checkReady(){
+    document.getElementById('btn-process').disabled = !(state.odoo && state.accounts && state.billing && state.metabase && state.admin);
+  }
+
+  function normDigits(v){ return (v==null?'':String(v)).replace(/\D/g,''); }
+  function normEmail(v){ return (v==null?'':String(v)).trim().toLowerCase(); }
+  function normId(v){
+    if(v==null || v==='') return null;
+    const n = parseInt(String(v).trim(), 10);
+    return isNaN(n) ? null : String(n);
+  }
+
+  // Valida un CUIT/CUIL argentino: 11 digitos y digito verificador (modulo 11). Es el mismo control
+  // que hace Odoo al importar ("El dígito de validación no es válido para CUIT") y bloquea todo el archivo.
+  function cuitValido(valor){
+    const c = String(valor == null ? '' : valor).replace(/\D/g, '');
+    if(c.length !== 11) return false;
+    const pesos = [5,4,3,2,7,6,5,4,3,2];
+    let suma = 0;
+    for(let i = 0; i < 10; i++) suma += parseInt(c[i], 10) * pesos[i];
+    const r = 11 - (suma % 11);
+    const dv = r === 11 ? 0 : (r === 10 ? 9 : r);
+    return dv === parseInt(c[10], 10);
+  }
+  // Valida un DNI argentino como lo hace Odoo: solo dígitos (se aceptan puntos, guiones y espacios
+  // como separadores) y largo de 7 u 8 dígitos. Si no, Odoo tira "Longitud inválida para DNI".
+  function dniValido(valor){
+    const d = String(valor == null ? '' : valor).replace(/[\s.\-]/g, '');
+    return /^\d{7,8}$/.test(d);
+  }
+  // --- Lector XLSX propio (zip + parser por regex, sin DOMParser: mucho mas rapido con archivos grandes
+  //     o con muchos hipervinculos, que generan decenas de miles de textos compartidos) ---
+  function colToIndex(ref){
+    const m = ref.match(/^[A-Z]+/);
+    const letters = m ? m[0] : 'A';
+    let idx = 0;
+    for(let i=0;i<letters.length;i++){ idx = idx*26 + (letters.charCodeAt(i)-64); }
+    return idx-1;
+  }
+  function xmlUnescape(s){
+    // El &amp; se resuelve primero para poder manejar entidades doblemente escapadas
+    // (ej: "&amp;#209;" en vez de "&#209;", que a veces genera Excel al re-exportar).
+    return s
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+      .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)));
+  }
+  function parseSharedStrings(xmlText){
+    if(!xmlText) return [];
+    const arr = [];
+    const siRegex = /<si[^>]*>([\s\S]*?)<\/si>/g;
+    const tRegex = /<t[^>]*>([\s\S]*?)<\/t>/g;
+    let m;
+    while((m = siRegex.exec(xmlText))){
+      let text = '', tm;
+      tRegex.lastIndex = 0;
+      while((tm = tRegex.exec(m[1]))){ text += xmlUnescape(tm[1]); }
+      arr.push(text);
+    }
+    return arr;
+  }
+  function parseSheetRows(xmlText, sharedStrings){
+    const rowRegex = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
+    const cellRegex = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    const aoa = [];
+    let maxCol = 0;
+    let rm;
+    while((rm = rowRegex.exec(xmlText))){
+      const rowArr = [];
+      cellRegex.lastIndex = 0;
+      let cm, ci = 0;
+      while((cm = cellRegex.exec(rm[1]))){
+        const attrs = cm[1] || '';
+        const inner = cm[2] || '';
+        const refMatch = attrs.match(/r="([^"]+)"/);
+        const colIdx = refMatch ? colToIndex(refMatch[1]) : ci;
+        const typeMatch = attrs.match(/t="([^"]+)"/);
+        const t = typeMatch ? typeMatch[1] : null;
+        let value = '';
+        if(t === 'inlineStr'){
+          const isMatch = inner.match(/<is>([\s\S]*?)<\/is>/);
+          if(isMatch){
+            const tRe = /<t[^>]*>([\s\S]*?)<\/t>/g;
+            let tm, text = '';
+            while((tm = tRe.exec(isMatch[1]))){ text += xmlUnescape(tm[1]); }
+            value = text;
+          }
+        } else {
+          const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+          const raw = vMatch ? xmlUnescape(vMatch[1]) : '';
+          if(t === 's'){ const idx = parseInt(raw,10); value = sharedStrings[idx] !== undefined ? sharedStrings[idx] : ''; }
+          else if(t === 'str'){ value = raw; }
+          else if(t === 'b'){ value = raw === '1'; }
+          else if(raw === ''){ value = ''; }
+          else { const n = parseFloat(raw); value = isNaN(n) ? raw : n; }
+        }
+        rowArr[colIdx] = value;
+        if(colIdx > maxCol) maxCol = colIdx;
+        ci++;
+      }
+      aoa.push(rowArr);
+    }
+    if(!aoa.length) return [];
+    // Deduplicar headers repetidos (ej: dos columnas "ID"): la segunda pasa a llamarse "ID (2)".
+    const header = [];
+    const vistos = {};
+    for(let i=0;i<=maxCol;i++){
+      const raw = aoa[0][i] !== undefined ? String(aoa[0][i]) : '';
+      if(vistos[raw] === undefined){ vistos[raw] = 0; header.push(raw); }
+      else { vistos[raw]++; header.push(raw + ' (' + (vistos[raw]+1) + ')'); }
+    }
+    const out = [];
+    for(let r=1;r<aoa.length;r++){
+      const rowArr = aoa[r] || [];
+      const obj = {};
+      for(let i=0;i<=maxCol;i++){ obj[header[i]] = rowArr[i] !== undefined ? rowArr[i] : ''; }
+      out.push(obj);
+    }
+    return out;
+  }
+
+  async function readXlsx(file){
+    const buf = await file.arrayBuffer();
+    const entries = readZipEntries(buf);
+    const sheetEntries = entries.filter(e => /^xl\/worksheets\/sheet\d+\.xml$/i.test(e.name))
+      .sort((a,b) => parseInt(a.name.match(/sheet(\d+)\.xml/i)[1],10) - parseInt(b.name.match(/sheet(\d+)\.xml/i)[1],10));
+    const sheetEntry = sheetEntries[0];
+    if(!sheetEntry) throw new Error('No se encontró ninguna hoja dentro del Excel');
+    const sharedEntry = entries.find(e => /^xl\/sharedStrings\.xml$/i.test(e.name));
+    const sheetXml = extractZipEntryText(buf, sheetEntry);
+    const sharedXml = sharedEntry ? extractZipEntryText(buf, sharedEntry) : null;
+    const sharedStrings = parseSharedStrings(sharedXml);
+    return parseSheetRows(sheetXml, sharedStrings);
+  }
+
+  function readText(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  function sliceFromHeader(text, mustContain){
+    const lines = text.split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){
+      if(mustContain.every(k => lines[i].indexOf(k) !== -1)) return lines.slice(i).join('\n');
+    }
+    return text;
+  }
+
+  // --- Parser CSV propio (reemplaza PapaParse), soporta comillas, delimitador variable y saltos de linea embebidos ---
+  function detectDelimiter(text){
+    const firstLine = text.split(/\r?\n/, 1)[0] || '';
+    const semis = (firstLine.match(/;/g) || []).length;
+    const commas = (firstLine.match(/,/g) || []).length;
+    return semis > commas ? ';' : ',';
+  }
+  function parseCsvRows(text, delimiter){
+    delimiter = delimiter || ',';
+    const rows = [];
+    let i=0, field='', row=[], inQuotes=false;
+    const len = text.length;
+    function pushField(){ row.push(field); field=''; }
+    function pushRow(){ pushField(); rows.push(row); row=[]; }
+    while(i<len){
+      const c = text[i];
+      if(inQuotes){
+        if(c === '"'){
+          if(text[i+1] === '"'){ field+='"'; i+=2; continue; }
+          else { inQuotes=false; i++; continue; }
+        } else { field+=c; i++; continue; }
+      } else {
+        if(c === '"'){ inQuotes=true; i++; continue; }
+        if(c === delimiter){ pushField(); i++; continue; }
+        if(c === '\r'){ i++; continue; }
+        if(c === '\n'){ pushRow(); i++; continue; }
+        field+=c; i++; continue;
+      }
+    }
+    if(field.length>0 || row.length>0){ pushRow(); }
+    const nonEmpty = rows.filter(r => !(r.length===1 && r[0]===''));
+    if(!nonEmpty.length) return [];
+    const header = nonEmpty[0];
+    const out = [];
+    for(let r=1;r<nonEmpty.length;r++){
+      const rowArr = nonEmpty[r];
+      const obj = {};
+      for(let c=0;c<header.length;c++){ obj[header[c]] = rowArr[c] !== undefined ? rowArr[c] : ''; }
+      out.push(obj);
+    }
+    return out;
+  }
+
+  // Normaliza filas de Odoo a un esquema único, sin importar si vienen con headers
+  // en español (formato viejo) o con nombres técnicos + External ID (formato nuevo).
+  function findKeyCI(obj, name){
+    const target = name.toLowerCase();
+    for(const k in obj){ if(k.toLowerCase() === target) return obj[k]; }
+    return undefined;
+  }
+  // Prueba una lista de nombres de columna candidatos (Odoo viene renombrando estos campos entre
+  // versiones/locales) y devuelve el primero que tenga valor. Agregar acá el nombre nuevo cuando
+  // Odoo vuelva a cambiarlo, en vez de parchar cada punto donde se usa el campo.
+  function findKeyCIAny(obj, names){
+    for(const n of names){
+      const v = findKeyCI(obj, n);
+      if(v !== undefined && v !== '') return v;
+    }
+    return undefined;
+  }
+  const NOMBRES_NIF = ['NIF', 'Identification Number', 'Número de Identificación', 'Numero de Identificacion'];
+  const NOMBRES_RESPONSABILIDAD_AFIP = ['Tipo de Responsabilidad AFIP', 'ARCA Responsibility Type', 'Tipo de responsabilidad de ARCA'];
+  const NOMBRES_ENLACE = ['Enlace a página web', 'Enlace del sitio web'];
+  const NOMBRES_PROVINCIA = ['Provincia', 'Estado'];
+  // Varios campos de Odoo (Tipo de Identificación, Provincia) vienen con sufijo " (AR)" cuando
+  // el campo es un many2one con país asociado (ej: "CUIT (AR)", "Río Negro (AR)"). Se limpia acá.
+  function limpiarSufijoAR(texto){
+    return String(texto || '').replace(/\s*\(AR\)\s*$/i, '').trim();
+  }
+  // Nombres de columna con los que salen los Output 2 y 3: se toman del export de Odoo que se cargó,
+  // así Odoo las reconoce solas al importar. Si el export viene en formato técnico, quedan estos.
+  let ODOO_COLS = { nif: 'Número de Identificación', tipo: 'Tipo de Identificación', resp: 'Tipo de responsabilidad de ARCA', enlace: 'Enlace del sitio web' };
+  const NOMBRES_TIPO_IDENT = ['Tipo de Identificación', 'Tipo de identificación'];
+
+  function primeraColumnaPresente(keys, candidatos){
+    const lower = candidatos.map(c => c.toLowerCase());
+    for(const k of keys){ if(lower.indexOf(String(k).toLowerCase()) !== -1) return k; }
+    return null;
+  }
+
+  // Columnas obligatorias del export de Odoo (decisión 8). Si falta alguna, no se puede procesar:
+  // leerla vacía dispara actualizaciones en cascada (todos "archivados", todos "sin NIF", etc.).
+  const COLUMNAS_OBLIGATORIAS_ODOO = [
+    { campo: 'Referencia', candidatos: ['Referencia', 'ref'] },
+    { campo: 'Nombre', candidatos: ['Nombre', 'name'] },
+    { campo: 'NIF / Número de Identificación', candidatos: NOMBRES_NIF.concat(['vat']) },
+    { campo: 'Tipo de Identificación', candidatos: NOMBRES_TIPO_IDENT.concat(['l10n_latam_identification_type_id']) },
+    { campo: 'Correo electrónico', candidatos: ['Correo electrónico', 'email'] },
+    { campo: 'Activo', candidatos: ['Activo', 'active'] },
+    { campo: 'Responsabilidad (ARCA/AFIP)', candidatos: NOMBRES_RESPONSABILIDAD_AFIP.concat(['l10n_ar_afip_responsibility_type_id']) },
+    { campo: 'External ID (segunda columna "ID")', candidatos: ['ID (2)', 'ID.1', '.id'] }
+  ];
+  function validarColumnasOdoo(rows){
+    if(!rows.length) return ['el archivo no tiene filas'];
+    const keys = Object.keys(rows[0]);
+    return COLUMNAS_OBLIGATORIAS_ODOO.filter(c => !primeraColumnaPresente(keys, c.candidatos)).map(c => c.campo);
+  }
+
+  function activoBool(v){
+    if(typeof v === 'boolean') return v;
+    if(typeof v === 'number') return v === 1;
+    const s = String(v == null ? '' : v).trim().toUpperCase();
+    return s === 'VERDADERO' || s === 'TRUE' || s === '1' || s === '1.0';
+  }
+
+  function normalizeOdooRows(rows){
+    if(!rows.length) return rows;
+    const keys = Object.keys(rows[0]);
+    const esFormatoTecnico = keys.includes('ref') && keys.includes('vat');
+    function tipoIdent(r){
+      const raw = findKeyCI(r, 'l10n_latam_identification_type_id') || findKeyCIAny(r, NOMBRES_TIPO_IDENT) || findKeyCI(r, 'TipoIdentificacion') || '';
+      return limpiarSufijoAR(raw);
+    }
+    if(!esFormatoTecnico){
+      ODOO_COLS = {
+        nif: primeraColumnaPresente(keys, NOMBRES_NIF) || 'Número de Identificación',
+        tipo: primeraColumnaPresente(keys, NOMBRES_TIPO_IDENT) || 'Tipo de Identificación',
+        resp: primeraColumnaPresente(keys, NOMBRES_RESPONSABILIDAD_AFIP) || 'Tipo de responsabilidad de ARCA',
+        enlace: primeraColumnaPresente(keys, NOMBRES_ENLACE) || 'Enlace del sitio web'
+      };
+      // El External ID viene como segunda columna "ID" (el lector de xlsx la deduplica como "ID (2)")
+      // o, en exports CSV de la versión nueva de Odoo, como "ID.1".
+      return rows.map(r => {
+        const externalId = r['ID (2)'] !== undefined ? r['ID (2)'] : (r['ID.1'] !== undefined ? r['ID.1'] : '');
+        const base = Object.assign({}, r, { ExternalID: externalId, TipoIdentificacion: tipoIdent(r) });
+        base['NIF'] = findKeyCIAny(r, NOMBRES_NIF) || '';
+        base['Tipo de Responsabilidad AFIP'] = findKeyCIAny(r, NOMBRES_RESPONSABILIDAD_AFIP) || '';
+        base['Enlace a página web'] = findKeyCIAny(r, NOMBRES_ENLACE) || '';
+        base['País'] = findKeyCI(r, 'País') || '';
+        base['Activo'] = activoBool(r['Activo']);
+        return base;
+      });
+    }
+    return rows.map(r => ({
+      ExternalID: r['.id'] || '',
+      ID: r['id'] || '',
+      Referencia: r['ref'] || '',
+      Nombre: r['name'] || '',
+      NIF: r['vat'] || '',
+      TipoIdentificacion: tipoIdent(r),
+      'Correo electrónico': r['email'] || '',
+      'Tipo de Responsabilidad AFIP': r['l10n_ar_afip_responsibility_type_id'] || '',
+      'Enlace a página web': r['website'] || '',
+      'País': r['country_id'] || '',
+      Activo: activoBool(r['active'])
+    }));
+  }
+
+  async function readOdooCsv(file){
+    const buf = await file.arrayBuffer();
+    let text = new TextDecoder('utf-8', {fatal:false}).decode(buf);
+    if(text.indexOf('\ufffd') !== -1){
+      text = new TextDecoder('windows-1252').decode(buf);
+    }
+    const delim = detectDelimiter(text);
+    const rows = parseCsvRows(text, delim);
+    rows.forEach(r => {
+      if(r['Estado'] !== undefined && r['Activo'] === undefined){
+        r['Activo'] = String(r['Estado']).trim().toUpperCase() === 'VERDADERO';
+      }
+    });
+    return rows; // filas crudas: se validan y normalizan en el handler
+  }
+
+  document.getElementById('f-odoo').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    state.odoo = null;
+    try{
+      const esCsv = /\.csv$/i.test(f.name);
+      const crudas = esCsv ? await readOdooCsv(f) : await readXlsx(f);
+      const faltantes = validarColumnasOdoo(crudas);
+      if(faltantes.length){
+        setStatus('s-odoo', 'Faltan columnas obligatorias: ' + faltantes.join(', ') + '. Volvé a exportar desde Odoo con la vista completa.', false);
+      } else {
+        state.odoo = normalizeOdooRows(crudas);
+        setStatus('s-odoo', state.odoo.length + ' filas cargadas' + (esCsv ? ' (CSV)' : ' (XLSX)') + ' · columnas OK', true);
+      }
+    }
+    catch(err){ setStatus('s-odoo', 'Error al leer archivo: ' + err.message, false); }
+    checkReady();
+  });
+
+  document.getElementById('f-dashzip').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    try{
+      const buf = await f.arrayBuffer();
+      const entries = readZipEntries(buf);
+      const accEntry = entries.find(en => /accounts.*\.csv$/i.test(en.name));
+      const billEntry = entries.find(en => /billing.*\.csv$/i.test(en.name));
+      if(!accEntry || !billEntry){
+        const nombres = entries.map(en => en.name).join(', ');
+        setStatus('s-dashzip', 'No se encontró accounts_*.csv / billing_*.csv. Archivos en el zip: ' + nombres, false);
+        return;
+      }
+      const accRaw = extractZipEntryText(buf, accEntry);
+      const billRaw = extractZipEntryText(buf, billEntry);
+      const accSliced = sliceFromHeader(accRaw, ['ID','Nombre','País','Estado comercial']);
+      state.accounts = parseCsvRows(accSliced);
+      state.billing = parseCsvRows(billRaw);
+      state.filtroPaisDash = detectarFiltroPais(accRaw, ['ID','Nombre','País','Estado comercial']);
+      setStatus('s-dashzip', 'Accounts: ' + state.accounts.length + ' filas · Billing: ' + state.billing.length + ' filas' +
+        (state.filtroPaisDash ? ' · ⚠ FILTRADO por País: ' + state.filtroPaisDash + ' — bajalo sin filtro de país' : ''), !state.filtroPaisDash);
+    } catch(err){ setStatus('s-dashzip', 'Error al leer el zip: ' + err.message, false); }
+    checkReady();
+  });
+
+  // Los reportes de Dash traen arriba del encabezado los filtros con que se bajaron. La corrida
+  // unificada necesita Accounts y admin_emails SIN filtro de país: si vienen filtrados, un universo
+  // queda afuera sin que se note. Formatos vistos:
+  //   accounts:     "País,Estado comercial,Módulos en el plan" / "Argentina,Activo,[]"
+  //   admin_emails: "País,Argentina" / "Estado comercial,Activo"
+  // Devuelve el país del filtro, o '' si no hay filtro de país.
+  function detectarFiltroPais(raw, mustContain){
+    const lineas = String(raw || '').replace(/^﻿/, '').split(/\r?\n/);
+    const iHeader = lineas.findIndex(l => mustContain.every(k => l.indexOf(k) !== -1));
+    const pre = lineas.slice(0, iHeader === -1 ? 0 : iHeader).map(l => l.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+    const ENCABEZADOS_FILTRO = ['estado comercial', 'estado', 'módulos en el plan', 'plan', 'país'];
+    for(let i = 0; i < pre.length; i++){
+      const k = pre[i].findIndex(c => c.toLowerCase() === 'país');
+      if(k === -1) continue;
+      const formatoClaveValor = k === 0 && pre[i].length === 2 && ENCABEZADOS_FILTRO.indexOf(String(pre[i][1]).toLowerCase()) === -1;
+      const valor = formatoClaveValor ? pre[i][1] : (pre[i + 1] && pre[i + 1][k]);
+      if(valor) return valor;
+    }
+    return '';
+  }
+
+  document.getElementById('f-metabase').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    try{ state.metabase = await readXlsx(f); setStatus('s-metabase', state.metabase.length + ' filas cargadas', true); }
+    catch(err){ setStatus('s-metabase', 'Error al leer archivo', false); }
+    checkReady();
+  });
+
+  document.getElementById('f-admin').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    try{
+      const raw = await readText(f);
+      const sliced = sliceFromHeader(raw, ['ID Cuenta','Usuario','Email']);
+      state.admin = parseCsvRows(sliced);
+      state.filtroPaisAdmin = detectarFiltroPais(raw, ['ID Cuenta','Usuario','Email']);
+      setStatus('s-admin', state.admin.length + ' filas cargadas' +
+        (state.filtroPaisAdmin ? ' · ⚠ FILTRADO por País: ' + state.filtroPaisAdmin + ' — bajalo sin filtro de país' : ''), !state.filtroPaisAdmin);
+    } catch(err){ setStatus('s-admin', 'Error al leer archivo', false); }
+    checkReady();
+  });
+
+  // --- Etapa 2 · Dash: estado y carga de archivos ---
+  const state2 = { odoo:null, billing:null, accounts:null };
+  function checkReady2(){
+    document.getElementById('btn-process-2').disabled = !(state2.odoo && state2.billing && state2.accounts);
+  }
+
+  document.getElementById('f2-odoo').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    try{
+      const esCsv = /\.csv$/i.test(f.name);
+      state2.odoo = normalizeOdooRows(esCsv ? await readOdooCsv(f) : await readXlsx(f));
+      setStatus('s2-odoo', state2.odoo.length + ' filas cargadas' + (esCsv ? ' (CSV)' : ' (XLSX)'), true);
+    } catch(err){ setStatus('s2-odoo', 'Error al leer archivo: ' + err.message, false); }
+    checkReady2();
+  });
+
+  document.getElementById('f2-dashzip').addEventListener('change', async e => {
+    const f = e.target.files[0]; if(!f) return;
+    try{
+      const buf = await f.arrayBuffer();
+      const entries = readZipEntries(buf);
+      const billEntry = entries.find(en => /billing.*\.csv$/i.test(en.name));
+      const accEntry = entries.find(en => /accounts.*\.csv$/i.test(en.name));
+      if(!billEntry || !accEntry){
+        const nombres = entries.map(en => en.name).join(', ');
+        setStatus('s2-dashzip', 'Necesito accounts_*.csv y billing_*.csv en el zip. Archivos encontrados: ' + nombres, false);
+        return;
+      }
+      state2.billing = parseCsvRows(extractZipEntryText(buf, billEntry));
+      state2.accounts = parseCsvRows(sliceFromHeader(extractZipEntryText(buf, accEntry), ['ID','Nombre','País','Estado comercial']));
+      setStatus('s2-dashzip', 'Accounts: ' + state2.accounts.length + ' filas · Billing: ' + state2.billing.length + ' filas', true);
+    } catch(err){ setStatus('s2-dashzip', 'Error al leer el zip: ' + err.message, false); }
+    checkReady2();
+  });
+
+  // --- Generador XLSX propio (sin librerías externas): zip "stored" + OOXML mínimo ---
+  function crc32(bytes){
+    if(!crc32.table){
+      const t = new Uint32Array(256);
+      for(let n=0;n<256;n++){
+        let c = n;
+        for(let k=0;k<8;k++){ c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1); }
+        t[n] = c>>>0;
+      }
+      crc32.table = t;
+    }
+    let crc = 0xFFFFFFFF;
+    for(let i=0;i<bytes.length;i++){ crc = crc32.table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8); }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function buildZipStored(files){
+    const localParts = [], centralParts = [];
+    let offset = 0;
+    const now = new Date();
+    const dosTime = ((now.getHours()<<11)|(now.getMinutes()<<5)|((now.getSeconds()/2)|0)) & 0xFFFF;
+    const dosDate = (((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate()) & 0xFFFF;
+    files.forEach(file => {
+      const nameBytes = new TextEncoder().encode(file.name);
+      const data = file.data;
+      const crc = crc32(data);
+      const localHeader = new Uint8Array(30 + nameBytes.length);
+      const dv = new DataView(localHeader.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0, true); dv.setUint16(8, 0, true);
+      dv.setUint16(10, dosTime, true); dv.setUint16(12, dosDate, true); dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true); dv.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+      localParts.push(localHeader, data);
+
+      const centralHeader = new Uint8Array(46 + nameBytes.length);
+      const cdv = new DataView(centralHeader.buffer);
+      cdv.setUint32(0, 0x02014b50, true); cdv.setUint16(4, 20, true); cdv.setUint16(6, 20, true); cdv.setUint16(8, 0, true); cdv.setUint16(10, 0, true);
+      cdv.setUint16(12, dosTime, true); cdv.setUint16(14, dosDate, true); cdv.setUint32(16, crc, true);
+      cdv.setUint32(20, data.length, true); cdv.setUint32(24, data.length, true);
+      cdv.setUint16(28, nameBytes.length, true); cdv.setUint16(30, 0, true); cdv.setUint16(32, 0, true);
+      cdv.setUint16(34, 0, true); cdv.setUint16(36, 0, true); cdv.setUint32(38, 0, true);
+      cdv.setUint32(42, offset, true);
+      centralHeader.set(nameBytes, 46);
+      centralParts.push(centralHeader);
+      offset += localHeader.length + data.length;
+    });
+    const centralStart = offset;
+    let centralSize = 0; centralParts.forEach(p => centralSize += p.length);
+    const eocd = new Uint8Array(22);
+    const edv = new DataView(eocd.buffer);
+    edv.setUint32(0, 0x06054b50, true); edv.setUint16(8, files.length, true); edv.setUint16(10, files.length, true);
+    edv.setUint32(12, centralSize, true); edv.setUint32(16, centralStart, true);
+    const out = new Uint8Array(offset + centralSize + 22);
+    let pos = 0;
+    localParts.forEach(p => { out.set(p, pos); pos += p.length; });
+    centralParts.forEach(p => { out.set(p, pos); pos += p.length; });
+    out.set(eocd, pos);
+    return out;
+  }
+
+  function colLetter(n){
+    let s = ''; n = n + 1;
+    while(n > 0){ const rem = (n - 1) % 26; s = String.fromCharCode(65 + rem) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+  function xmlEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildXlsxBytes(rows, sheetName){
+    sheetName = (sheetName || 'Hoja1').replace(/[\\/?*\[\]:]/g,'').slice(0, 31) || 'Hoja1';
+    const cols = rows.length ? Object.keys(rows[0]) : ['Sin datos'];
+    let sheetRows = '<row r="1">' + cols.map((c,i) => '<c r="' + colLetter(i) + '1" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(c) + '</t></is></c>').join('') + '</row>';
+    rows.forEach((r, ri) => {
+      const rn = ri + 2;
+      sheetRows += '<row r="' + rn + '">' + cols.map((c, ci) => {
+        const val = r[c] == null ? '' : String(r[c]);
+        const estilo = (r._rojo && r._rojo.indexOf(c) !== -1) ? ' s="1"' : '';
+        return '<c r="' + colLetter(ci) + rn + '"' + estilo + ' t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(val) + '</t></is></c>';
+      }).join('') + '</row>';
+    });
+    const sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sheetRows + '</sheetData></worksheet>';
+    const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+    const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+    const workbookXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEsc(sheetName) + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
+    const workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFF0000"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>';
+    const enc = new TextEncoder();
+    const files = [
+      { name: '[Content_Types].xml', data: enc.encode(contentTypes) },
+      { name: '_rels/.rels', data: enc.encode(rootRels) },
+      { name: 'xl/workbook.xml', data: enc.encode(workbookXml) },
+      { name: 'xl/_rels/workbook.xml.rels', data: enc.encode(workbookRels) },
+      { name: 'xl/styles.xml', data: enc.encode(stylesXml) },
+      { name: 'xl/worksheets/sheet1.xml', data: enc.encode(sheetXml) }
+    ];
+    return buildZipStored(files);
+  }
+
+  function safeFileName(title){
+    return title.replace(/—/g,'-').replace(/[\/\\?%*:|"<>]/g,'').trim();
+  }
+
+  function toCsv(rows){
+    if(!rows || !rows.length) return '';
+    const cols = Object.keys(rows[0]);
+    const esc = v => { v = (v==null? '' : String(v)); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+    const lines = [cols.join(',')];
+    rows.forEach(r => lines.push(cols.map(c => esc(r[c])).join(',')));
+    return lines.join('\n');
+  }
+
+  function fillTextarea(bucketName){
+    const ta = document.getElementById(bucketName + '_text');
+    if(ta && !ta.value){
+      const rows = window.__vcBuckets[bucketName];
+      ta.value = toCsv(rows);
+    }
+    return ta;
+  }
+
+  // Descarga como XLSX real (generado sin librerías externas). El nombre del archivo sale del título de la sección.
+  window.vcDownload = function(bucketName){
+    try{
+      const rows = window.__vcBuckets[bucketName];
+      const title = (window.__vcTitles && window.__vcTitles[bucketName]) || bucketName;
+      const fname = safeFileName(title) + '.xlsx';
+      const bytes = buildXlsxBytes(rows, title.replace(/^Output \d+\s*[-—]\s*/,''));
+      const blob = new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e){ /* si falla, el usuario tiene el botón "Copiar" y el texto seleccionable como respaldo */ }
+  };
+
+  // Copia al portapapeles como texto CSV (respaldo si la descarga del xlsx no funciona en el entorno).
+  window.vcCopy = function(bucketName, btn){
+    const ta = fillTextarea(bucketName);
+    const done = (ok) => { if(btn){ const orig = btn.textContent; btn.textContent = ok ? '¡Copiado!' : 'No se pudo copiar'; setTimeout(()=>{ btn.textContent = orig; }, 1800); } };
+    const csv = ta ? ta.value : toCsv(window.__vcBuckets[bucketName]);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(csv).then(()=>done(true)).catch(()=>{
+        if(fallbackCopy(ta)) done(true); else done(false);
+      });
+    } else {
+      done(fallbackCopy(ta));
+    }
+  };
+
+  function fallbackCopy(ta){
+    try{
+      if(!ta) return false;
+      ta.style.position = 'static';
+      ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      return ok;
+    } catch(e){ return false; }
+  }
+
+  window.vcToggle = function(id){
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+    if(el.classList.contains('open') && window.__vcBuckets && window.__vcBuckets[id]){
+      fillTextarea(id);
+    }
+  };
+
+  function renderTable(rows, limit){
+    if(!rows.length) return '<p style="font-size:12px;color:#9ca3af;">Sin registros.</p>';
+    const cols = Object.keys(rows[0]);
+    const shown = rows.slice(0, limit || 15);
+    let html = '<div class="vc-table-wrap"><table class="vc-t"><thead><tr>' + cols.map(c=>'<th>'+c+'</th>').join('') + '</tr></thead><tbody>';
+    shown.forEach(r => { html += '<tr>' + cols.map(c => {
+      const rojo = r._rojo && r._rojo.indexOf(c) !== -1;
+      return '<td' + (rojo ? ' style="background:#ff0000;color:#fff;font-weight:700;"' : '') + '>' + (r[c]==null?'':String(r[c])) + '</td>';
+    }).join('') + '</tr>'; });
+    html += '</tbody></table></div>';
+    if(rows.length > shown.length) html += '<p style="font-size:11px;color:#9ca3af;margin-top:6px;">Mostrando ' + shown.length + ' de ' + rows.length + '.</p>';
+    return html;
+  }
+
+  // Descarga como CSV real (Dash pide el archivo separado por comas, no xlsx).
+  window.vcDownloadCsv = function(bucketName){
+    try{
+      const rows = window.__vcBuckets[bucketName];
+      const title = (window.__vcTitles && window.__vcTitles[bucketName]) || bucketName;
+      const fname = safeFileName(title) + '.csv';
+      const csv = toCsv(rows);
+      const blob = new Blob(["\ufeff" + csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e){ /* si falla, el usuario tiene el botón "Copiar" y el texto seleccionable como respaldo */ }
+  };
+
+  function sectionCsv(id, title, rows, note, pillType, pillLabel){
+    window.__vcTitles = window.__vcTitles || {};
+    window.__vcTitles[id] = title;
+    const pill = pillType ? '<span class="vc-pill ' + pillType + '">' + pillLabel + '</span>' : '';
+    const disabled = rows.length ? '' : 'disabled';
+    return '<div class="vc-section"><div class="vc-section-head" onclick="vcToggle(\'' + id + '\')"><h3>' + title + pill + '</h3>' +
+      '<span>' +
+        '<button class="vc-btn ghost" onclick="event.stopPropagation(); vcDownloadCsv(\'' + id + '\')" ' + disabled + '>Descargar .csv</button> ' +
+        '<button class="vc-btn ghost" onclick="event.stopPropagation(); vcCopy(\'' + id + '\', this)" ' + disabled + '>Copiar CSV</button>' +
+      '</span></div>' +
+      '<div class="vc-section-body" id="' + id + '">' +
+        (note ? '<p class="vc-note">' + note + '</p>' : '') +
+        renderTable(rows) +
+        '<textarea id="' + id + '_text" readonly onclick="this.select()" placeholder="Si &quot;Descargar&quot; o &quot;Copiar&quot; no funcionan en tu entorno, hacé click acá, Ctrl+A y Ctrl+C para copiar el CSV manualmente." style="width:100%;min-height:110px;margin-top:10px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:8px;color:var(--texto);background:#fafafd;"></textarea>' +
+      '</div></div>';
+  }
+
+  function section(id, title, rows, note, pillType, pillLabel){
+    window.__vcTitles = window.__vcTitles || {};
+    window.__vcTitles[id] = title;
+    const pill = pillType ? '<span class="vc-pill ' + pillType + '">' + pillLabel + '</span>' : '';
+    const disabled = rows.length ? '' : 'disabled';
+    return '<div class="vc-section"><div class="vc-section-head" onclick="vcToggle(\'' + id + '\')"><h3>' + title + pill + '</h3>' +
+      '<span>' +
+        '<button class="vc-btn ghost" onclick="event.stopPropagation(); vcDownload(\'' + id + '\')" ' + disabled + '>Descargar .xlsx</button> ' +
+        '<button class="vc-btn ghost" onclick="event.stopPropagation(); vcCopy(\'' + id + '\', this)" ' + disabled + '>Copiar CSV</button>' +
+      '</span></div>' +
+      '<div class="vc-section-body" id="' + id + '">' +
+        (note ? '<p class="vc-note">' + note + '</p>' : '') +
+        renderTable(rows) +
+        '<textarea id="' + id + '_text" readonly onclick="this.select()" placeholder="Si &quot;Descargar&quot; o &quot;Copiar&quot; no funcionan en tu entorno, hacé click acá, Ctrl+A y Ctrl+C para copiar el CSV manualmente." style="width:100%;min-height:110px;margin-top:10px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:8px;color:var(--texto);background:#fafafd;"></textarea>' +
+      '</div></div>';
+  }
+
+  // =====================================================================================
+  // MOTOR UNIFICADO — Comandarina S.R.L.: universo Argentina + universo Others (PayPal)
+  // Cada cuenta de Dash se rutea por el País de Accounts:
+  //   Argentina                          -> perfil AR (CUIT/DNI, Metabase, valores AR)
+  //   Chile, México, Brasil, Colombia    -> fuera de alcance (tienen su propio proceso)
+  //   resto                              -> perfil Others (NIF con ISO2, Passport, Cliente del Exterior)
+  // =====================================================================================
+
+  const PAISES_FUERA_DE_ALCANCE = ['CHILE', 'MEXICO', 'BRASIL', 'COLOMBIA'];
+  function normalizarTextoPais(v){
+    return String(v == null ? '' : v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  }
+  function universoDePais(pais){
+    const p = normalizarTextoPais(pais);
+    if(p === 'ARGENTINA') return 'AR';
+    if(PAISES_FUERA_DE_ALCANCE.includes(p)) return 'FUERA';
+    return 'OTHERS';
+  }
+  const NOMBRE_UNIVERSO = { AR: 'Argentina', OTHERS: 'Others', FUERA: 'Fuera de alcance' };
+
+  // --- Helpers de NIF / país del perfil Others (heredados del Diccionario PayPal) ---
+  // Deja solo alfanumérico en mayúsculas (para comparar Código Dash vs NIF Odoo).
+  function limpiarAlfanum(v){ return String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  // Odoo saca los ceros a la izquierda del Código al armar el NIF (030177200016 -> UY30177200016).
+  function sinCerosIzq(v){ const s = String(v == null ? '' : v); const x = s.replace(/^0+/, ''); return x === '' ? '0' : x; }
+const PAISES_ODOO = [["Afganistán", "AF"], ["Albania", "AL"], ["Alemania", "DE"], ["Andorra", "AD"], ["Angola", "AO"], ["Anguilla", "AI"], ["Antigua y Barbuda", "AG"], ["Antártida", "AQ"], ["Arabia Saudita", "SA"], ["Argelia", "DZ"], ["Argentina", "AR"], ["Armenia", "AM"], ["Aruba", "AW"], ["Australia", "AU"], ["Austria", "AT"], ["Azerbaiyán", "AZ"], ["Bahamas", "BS"], ["Bahréin", "BH"], ["Bangladesh", "BD"], ["Barbados", "BB"], ["Belize", "BZ"], ["Benín", "BJ"], ["Bermudas", "BM"], ["Bhután", "BT"], ["Bielorrusia", "BY"], ["Birmania", "MM"], ["Bolivia", "BO"], ["Bonaire, San Eustaquio y Saba", "BQ"], ["Bosnia-Herzegovina", "BA"], ["Botsuana", "BW"], ["Brasil", "BR"], ["Brunei Darussalam", "BN"], ["Bulgaria", "BG"], ["Burkina Faso", "BF"], ["Burundi", "BI"], ["Bélgica", "BE"], ["Cabo Verde", "CV"], ["Camboya", "KH"], ["Camerún", "CM"], ["Canadá", "CA"], ["Chad", "TD"], ["Chile", "CL"], ["China", "CN"], ["Chipre", "CY"], ["Colombia", "CO"], ["Comores", "KM"], ["Congo", "CG"], ["Corea del Norte", "KP"], ["Corea del Sur", "KR"], ["Costa Rica", "CR"], ["Costa de Marfil", "CI"], ["Croacia", "HR"], ["Cuba", "CU"], ["Curaçao", "CW"], ["Dinamarca", "DK"], ["Dominica", "DM"], ["EE.UU. Islas Exteriores Menores", "UM"], ["Ecuador", "EC"], ["Egipto", "EG"], ["El Salvador", "SV"], ["Emiratos Árabes Unidos", "AE"], ["Eritrea", "ER"], ["Eslovaquia", "SK"], ["Eslovenia", "SI"], ["España", "ES"], ["Estado de Palestina", "PS"], ["Estados Unidos", "US"], ["Estonia", "EE"], ["Etiopía", "ET"], ["Federación Rusa", "RU"], ["Fiji", "FJ"], ["Filipinas", "PH"], ["Finlandia", "FI"], ["Francia", "FR"], ["Gabón", "GA"], ["Gambia", "GM"], ["Georgia", "GE"], ["Ghana", "GH"], ["Gibraltar", "GI"], ["Granada", "GD"], ["Grecia", "GR"], ["Groenlandia", "GL"], ["Guadalupe", "GP"], ["Guam", "GU"], ["Guatemala", "GT"], ["Guayana", "GY"], ["Guayana Francesa", "GF"], ["Guernsey", "GG"], ["Guinea", "GN"], ["Guinea Ecuatorial", "GQ"], ["Guinea-Bisáu", "GW"], ["Haití", "HT"], ["Holanda", "NL"], ["Honduras", "HN"], ["Hong Kong", "HK"], ["Hungría", "HU"], ["India", "IN"], ["Indonesia", "ID"], ["Irak", "IQ"], ["Irlanda", "IE"], ["Irán", "IR"], ["Isla Bouvet", "BV"], ["Isla Norfolk", "NF"], ["Isla de Man", "IM"], ["Isla de Navidad", "CX"], ["Islandia", "IS"], ["Islas Caimán", "KY"], ["Islas Cocos (Keeling)", "CC"], ["Islas Cook", "CK"], ["Islas Feroe", "FO"], ["Islas Georgia del sur y Sandwich del sur", "GS"], ["Islas Heard y McDonald", "HM"], ["Islas Malvinas", "FK"], ["Islas Marianas del Norte", "MP"], ["Islas Marshall", "MH"], ["Islas Pitcairn", "PN"], ["Islas Salomón", "SB"], ["Islas Turcas y Caicos", "TC"], ["Islas Vírgenes (Británicas)", "VG"], ["Islas Vírgenes (EE.UU.)", "VI"], ["Islas Åland", "AX"], ["Israel", "IL"], ["Italia", "IT"], ["Jamaica", "JM"], ["Japón", "JP"], ["Jersey", "JE"], ["Jordania", "JO"], ["Kazajstán", "KZ"], ["Kenia", "KE"], ["Kirguistán", "KG"], ["Kiribati", "KI"], ["Kosovo", "XK"], ["Kuwait", "KW"], ["Laos", "LA"], ["Lesotho", "LS"], ["Letonia", "LV"], ["Liberia", "LR"], ["Libia", "LY"], ["Liechtenstein", "LI"], ["Lituania", "LT"], ["Luxemburgo", "LU"], ["Líbano", "LB"], ["Macao", "MO"], ["Macedonia del Norte", "MK"], ["Madagascar", "MG"], ["Malasia", "MY"], ["Malawi", "MW"], ["Maldivas", "MV"], ["Mali", "ML"], ["Malta", "MT"], ["Marruecos", "MA"], ["Martinica", "MQ"], ["Mauricio", "MU"], ["Mauritania", "MR"], ["Mayotte", "YT"], ["Micronesia", "FM"], ["Moldavia", "MD"], ["Mongolia", "MN"], ["Montenegro", "ME"], ["Montserrat", "MS"], ["Mozambique", "MZ"], ["México", "MX"], ["Mónaco", "MC"], ["Nauru", "NR"], ["Nepal", "NP"], ["Nicaragua", "NI"], ["Nigeria", "NG"], ["Niue", "NU"], ["Noruega", "NO"], ["Nueva Caledonia", "NC"], ["Nueva Zelanda", "NZ"], ["Níger", "NE"], ["Omán", "OM"], ["Pakistán", "PK"], ["Palau", "PW"], ["Panamá", "PA"], ["Papúa Nueva Guinea", "PG"], ["Paraguay", "PY"], ["Perú", "PE"], ["Polinesia Francesa", "PF"], ["Polonia", "PL"], ["Portugal", "PT"], ["Puerto Rico", "PR"], ["Qatar", "QA"], ["Reino Unido", "GB"], ["República Centro Africana", "CF"], ["República Checa", "CZ"], ["República Democrática del Congo", "CD"], ["República Dominicana", "DO"], ["Reunión", "RE"], ["Ruanda", "RW"], ["Rumania", "RO"], ["Samoa", "WS"], ["Samoa Americana", "AS"], ["San Bartolomé", "BL"], ["San Cristóbal y Nieves", "KN"], ["San Marino", "SM"], ["San Martín (parte holandesa)", "SX"], ["San Martín (zona francesa)", "MF"], ["San Pierre y Miquelon", "PM"], ["San Vicente y las Granadinas", "VC"], ["Santa Elena, Ascensión y Tristán de Acuña", "SH"], ["Santa Lucía", "LC"], ["Santa Sede (Ciudad Estado del Vaticano)", "VA"], ["Santo Tomé y Príncipe", "ST"], ["Senegal", "SN"], ["Serbia", "RS"], ["Seychelles", "SC"], ["Sierra Leona", "SL"], ["Singapur", "SG"], ["Siria", "SY"], ["Somalia", "SO"], ["Sri Lanka", "LK"], ["Suazilandia", "SZ"], ["Sudáfrica", "ZA"], ["Sudán", "SD"], ["Sudán del Sur", "SS"], ["Suecia", "SE"], ["Suiza", "CH"], ["Surinam", "SR"], ["Svalbard y Jan Mayen", "SJ"], ["Sáhara occidental", "EH"], ["Tailandia", "TH"], ["Taiwán", "TW"], ["Tajikistán", "TJ"], ["Tanzania", "TZ"], ["Territorio británico del Océano Índico", "IO"], ["Territorios franceses del sur", "TF"], ["Timor Oriental", "TL"], ["Togo", "TG"], ["Tokelau", "TK"], ["Tonga", "TO"], ["Trinidad y Tobago", "TT"], ["Turkmekistán", "TM"], ["Turquía", "TR"], ["Tuvalu", "TV"], ["Túnez", "TN"], ["Ucrania", "UA"], ["Uganda", "UG"], ["Uruguay", "UY"], ["Uzbekistán", "UZ"], ["Vanuatu", "VU"], ["Venezuela", "VE"], ["Vietnam", "VN"], ["Wallis y Futuna", "WF"], ["Yemen", "YE"], ["Yibuti", "DJ"], ["Zambia", "ZM"], ["Zimbabwe", "ZW"]];
+const NORMALIZACION_PAISES = [["Peru", "Perú"], ["Spain", "España"], ["Dominican Republic", "República Dominicana"], ["American Samoa", "Samoa"], ["United Kingdom", "Reino Unido"], ["Venezuela (Bolivarian Republic of)", "Venezuela"], ["Canada", "Canadá"], ["USA", "Estados Unidos"], ["Bolivia (Plurinational State of)", "Bolivia"], ["Panama", "Panamá"], ["Ecuador", "Ecuador"], ["Paraguay", "Paraguay"], ["Guatemala", "Guatemala"], ["Uruguay", "Uruguay"]];
+// Mapa de normalización de nombres de país (Dash -> nombre "oficial" antes de buscar en Odoo).
+// Se arma con las 11 variantes que vienen en la hoja "Normalización de países" del Excel de
+// importación, más los casos puntuales que se van encontrando en corridas reales (que no
+// estaban documentados ahí). Cada vez que un import de Odoo tira "no se encontraron registros
+// que coincidan para nombre X en el campo País", hay que sumar el caso acá.
+const NORMALIZACION_MANUAL_EXTRA = [
+  // Detectado en corrida real (cuenta 377648): Dash trae "Islas Vírgenes, de EEUU", que no
+  // matchea ningún país de Odoo tal cual. Por decisión de negocio, este territorio se agrupa
+  // bajo "Estados Unidos" (no se usa el país específico "Islas Vírgenes (EE.UU.)" que sí
+  // existe en la tabla de Odoo, para simplificar).
+  ['Islas Vírgenes, de EEUU', 'Estados Unidos'],
+  // Detectado en corrida real (cuenta 365435, 30/10/2026): Dash trae la variante larga del nombre.
+  ['United States of America', 'Estados Unidos'],
+];
+const MAPA_NORM_PAIS = new Map(
+  [...NORMALIZACION_PAISES, ...NORMALIZACION_MANUAL_EXTRA].map(([a, b]) => [normalizarTextoPais(a), b])
+);
+// Mapa nombre-país-Odoo (normalizado) -> código ISO2
+const MAPA_ISO2 = new Map(PAISES_ODOO.map(([nombre, cod]) => [normalizarTextoPais(nombre), cod]));
+
+// Convierte un país tal como viene de Dash al nombre tal como está cargado en Odoo.
+function normalizarPaisParaOdoo(paisDash) {
+  const key = normalizarTextoPais(paisDash);
+  if (MAPA_NORM_PAIS.has(key)) return MAPA_NORM_PAIS.get(key);
+  // Si ya matchea un nombre de la tabla de países de Odoo tal cual, se devuelve tal cual (con su acentuación real)
+  const directo = PAISES_ODOO.find(([nombre]) => normalizarTextoPais(nombre) === key);
+  if (directo) return directo[0];
+  return paisDash; // no se encontró match, se deja como vino (revisar a mano)
+}
+
+function getIso2(paisDash) {
+  const paisOdoo = normalizarPaisParaOdoo(paisDash);
+  const key = normalizarTextoPais(paisOdoo);
+  return MAPA_ISO2.get(key) || '';
+}
+
+// Arma el NIF con el prefijo ISO2 correspondiente, a partir del Código de Billing.
+function armarNifConPrefijo(codigoBilling, paisDash) {
+  const iso2 = getIso2(paisDash);
+  const codigoLimpio = sinCerosIzq(limpiarAlfanum(codigoBilling));
+  if (!iso2) return codigoLimpio; // sin país reconocido, no se puede anteponer prefijo
+  return iso2 + codigoLimpio;
+}
+
+// Compara Código (Dash/Billing) contra NIF (Odoo) ignorando el prefijo ISO2 de país.
+// Devuelve true si "coinciden" (o sea, no hubo cambio de identidad fiscal).
+function coincideNifConCodigo(nifOdoo, codigoBilling, paisDash) {
+  const nifLimpio = limpiarAlfanum(nifOdoo);
+  const codigoLimpio = limpiarAlfanum(codigoBilling);
+  if (!codigoLimpio) return !nifLimpio; // ambos vacíos
+  if (!nifLimpio) return false;
+  const iso2 = getIso2(paisDash);
+  const codigoSinCeros = sinCerosIzq(codigoLimpio);
+  // El NIF debería terminar con el código limpio (sin ceros a la izquierda), sin importar
+  // si tiene o no el prefijo de país puesto adelante.
+  if (nifLimpio === codigoLimpio || nifLimpio === codigoSinCeros) return true;
+  if (nifLimpio.endsWith(codigoLimpio) || nifLimpio.endsWith(codigoSinCeros)) return true;
+  if (iso2 && (nifLimpio === iso2 + codigoLimpio || nifLimpio === iso2 + codigoSinCeros)) return true;
+  return false;
+}
+
+
+  // --- Valores fijos por universo (Odoo los renombra seguido: un solo lugar para cambiarlos) ---
+  const VALOR_COMPANIA = 'COMANDARINA S. R. L.';
+  const OT_TIPO_IDENTIFICACION = 'Passport';
+  const OT_RESPONSABILIDAD = 'Cliente del Exterior';
+  const AR_RESPONSABILIDAD_ALTAS = 'Consumidor Final';
+
+  // --- Cuentas internas (lista única para los dos universos) ---
+  const DOMINIOS_INTERNOS = new Set(['fu.do', 'fudo.com', 'fudo.cl', 'fudo', 'deli.com.br']);
+  // Referencias (ID de Dash) que NUNCA se marcan como internas: revisadas a mano y confirmadas como clientes reales.
+  const EXCEPCIONES_CUENTA_INTERNA = new Set(['154948']); // tienda_cholita
+  function esDominioInterno(mail){
+    const m = normEmail(mail);
+    if(!m || m.indexOf('@') === -1) return false;
+    return DOMINIOS_INTERNOS.has(m.split('@').pop());
+  }
+
+  // --- Validación de mail (misma para toda la herramienta) ---
+  function construirComentario(mail, huboIntentoAdmin){
+    const problemas = [];
+    const limpio = (mail || '').trim();
+    if(!limpio){
+      problemas.push(huboIntentoAdmin ? 'No tiene ningún mail admin' : 'mail vacío');
+      return problemas.join('; ');
+    }
+    if(mail !== limpio) problemas.push('mail con espacios extra');
+    if(/[áéíóúÁÉÍÓÚüÜñÑ]/.test(limpio)) problemas.push('mail con tildes');
+    if(/\s/.test(limpio)) problemas.push('mail con espacios internos');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio)) problemas.push('formato de mail inválido');
+    return problemas.join('; ');
+  }
+  function esMailValido(mail){ return !!mail && construirComentario(mail, false) === ''; }
+
+  // --- Elección del mejor admin: cada universo con su criterio (decisión 1) ---
+  function loginTimeMs(admin){
+    const t = new Date(admin['Último login (UTC)'] || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  // AR: 1) mail válido, 2) más logins, 3) login más reciente.
+  function ordenarAdminsAR(lista){
+    return lista.slice().sort((a, b) => {
+      const va = esMailValido(a['Email']) ? 1 : 0, vb = esMailValido(b['Email']) ? 1 : 0;
+      if(vb !== va) return vb - va;
+      const la = parseInt(a['Logins'] || '0', 10), lb = parseInt(b['Logins'] || '0', 10);
+      if(lb !== la) return lb - la;
+      return loginTimeMs(b) - loginTimeMs(a);
+    });
+  }
+  // Others: niveles — 1) válido y reciente, 2) válido, 3) reciente aunque inválido, 4) el resto; dentro de cada nivel, más logins.
+  function esRecienteOT(fechaStr){
+    if(!fechaStr) return false;
+    const t = new Date(fechaStr).getTime();
+    if(isNaN(t)) return false;
+    return (Date.now() - t) / (1000 * 60 * 60 * 24 * 30.44) < 3;
+  }
+  function tierAdminOT(row){
+    const v = esMailValido(row['Email']), r = esRecienteOT(row['Último login (UTC)']);
+    if(v && r) return 1; if(v) return 2; if(r) return 3; return 4;
+  }
+  function ordenarAdminsOT(lista){
+    return lista.slice().sort((a, b) => {
+      const ta = tierAdminOT(a), tb = tierAdminOT(b);
+      if(ta !== tb) return ta - tb;
+      return parseInt(b['Logins'] || '0', 10) - parseInt(a['Logins'] || '0', 10);
+    });
+  }
+
+  // --- Mapeo de situación fiscal (solo AR, Regla 3b) ---
+  function mapSituacion(raw){
+    if(!raw) return '';
+    const s = String(raw).trim().toLowerCase();
+    const map = {
+      'responsable inscripto': 'IVA Responsable Inscripto', 'responsable_inscripto': 'IVA Responsable Inscripto',
+      'monotributo': 'Responsable Monotributo', 'monotributista': 'Responsable Monotributo',
+      'consumidor final': 'Consumidor Final', 'exento': 'IVA Sujeto Exento'
+    };
+    return map[s] || raw;
+  }
+
+  // --- Constructores de filas con columnas FIJAS (los nombres de NIF, tipo, responsabilidad y
+  //     enlace son los mismos que trae el export de Odoo cargado, ver ODOO_COLS) ---
+  function filaUpdate(o){
+    const r = {};
+    r['External ID'] = o.externalId || '';
+    r['Referencia'] = o.referencia;
+    r['Nombre'] = o.nombre || '';
+    r[ODOO_COLS.nif] = o.nif || '';
+    r[ODOO_COLS.tipo] = o.tipo || '';
+    r['Correo electrónico'] = o.mail || '';
+    r[ODOO_COLS.resp] = o.resp || '';
+    r[ODOO_COLS.enlace] = o.enlace || '';
+    r['Activo'] = o.activo ? 'TRUE' : 'FALSE';
+    r['Grupo (no importar)'] = o.grupo;
+    r['Universo (no importar)'] = NOMBRE_UNIVERSO[o.universo];
+    r['Comentario (no importar)'] = o.comentario || '';
+    return r;
+  }
+  function filaAlta(o){
+    const r = {};
+    r['Nombre'] = o.nombre || '';
+    r['Tipo de compañía'] = 'Compañía';
+    r['Nombre de la calle'] = o.domicilio || '';
+    r['Idioma'] = 'Spanish / Español';
+    r['Ciudad'] = o.ciudad || '';
+    r['País'] = o.pais || '';
+    r[ODOO_COLS.tipo] = o.tipo || '';
+    r[ODOO_COLS.nif] = o.nif || '';
+    r[ODOO_COLS.resp] = o.resp || '';
+    r['Correo electrónico'] = o.mail || '';
+    r['Referencia'] = o.referencia;
+    r['Compañía'] = VALOR_COMPANIA;
+    r[ODOO_COLS.enlace] = o.enlace;
+    r['Grupo (no importar)'] = o.grupo;
+    r['Universo (no importar)'] = NOMBRE_UNIVERSO[o.universo];
+    r['Comentario (no importar)'] = construirComentario(o.mail, !!o.huboIntentoAdmin);
+    return r;
+  }
+
+  function marcarIdentificacionesInvalidas(rows, origen, acumulador){
+    rows.forEach(r => {
+      const tipo = String(r[ODOO_COLS.tipo] || '').trim().toUpperCase();
+      const nif = r[ODOO_COLS.nif];
+      if(!nif) return;
+      let motivo = '';
+      if(tipo === 'CUIT' && !cuitValido(nif)) motivo = 'dígito verificador inválido';
+      else if(tipo === 'DNI' && !dniValido(nif)) motivo = 'largo inválido (el DNI debe tener 7 u 8 dígitos)';
+      if(motivo){
+        Object.defineProperty(r, '_rojo', { value: [ODOO_COLS.nif], enumerable: false, configurable: true });
+        acumulador.push({ Origen: origen, Referencia: r['Referencia'], Nombre: r['Nombre'], Tipo: tipo, NIF: nif, Motivo: motivo });
+      }
+    });
+  }
+
+  // =====================================================================================
+  // procesarDiccionario: motor puro (sin DOM). Recibe las filas ya leídas y devuelve todo.
+  // =====================================================================================
+  function procesarDiccionario({ accounts, billing, odoo, admin, metabase }){
+    // --- Índices ---
+    const odooByRef = new Map();
+    odoo.forEach(r => {
+      const refRaw = String(r['Referencia'] || '').trim();
+      if(/_old$/i.test(refRaw)) return; // baja de una corrida anterior (Regla 3a): no participa del cruce
+      const ref = normId(refRaw);
+      if(!ref) return;
+      if(!odooByRef.has(ref)) odooByRef.set(ref, []);
+      odooByRef.get(ref).push(r);
+    });
+    const billingByAcc = new Map();
+    billing.forEach(r => { const id = normId(r['ID']); if(id) billingByAcc.set(id, r); });
+    const metaByAcc = new Map();
+    metabase.forEach(r => {
+      if(String(r['afip_settings_state'] || '').trim() !== 'approved') return;
+      const id = normId(r['account_id']);
+      if(id) metaByAcc.set(id, r);
+    });
+    const adminGroups = new Map();
+    admin.forEach(r => {
+      const id = normId(r['ID Cuenta']);
+      if(!id) return;
+      if(!adminGroups.has(id)) adminGroups.set(id, []);
+      adminGroups.get(id).push(r);
+    });
+
+    // Regla 2c (AR): ventana de 3 meses contra la fecha real del análisis.
+    const LIMITE_3_MESES = new Date(); LIMITE_3_MESES.setMonth(LIMITE_3_MESES.getMonth() - 3);
+    const LIMITE_3_MESES_MS = LIMITE_3_MESES.getTime();
+    function resolverMailMantenimientoAR(listaOrdenada, mailOdooActual){
+      const mailOdooNorm = normEmail(mailOdooActual);
+      const actual = listaOrdenada.find(a => normEmail(a['Email']) === mailOdooNorm);
+      if(actual && esMailValido(actual['Email']) && loginTimeMs(actual) >= LIMITE_3_MESES_MS) return { cambia:false, nuevo: mailOdooActual };
+      const validoYReciente = listaOrdenada.filter(a => esMailValido(a['Email']) && loginTimeMs(a) >= LIMITE_3_MESES_MS);
+      const validoNadaMas = listaOrdenada.filter(a => esMailValido(a['Email']) && loginTimeMs(a) < LIMITE_3_MESES_MS);
+      const recienteNadaMas = listaOrdenada.filter(a => !esMailValido(a['Email']) && loginTimeMs(a) >= LIMITE_3_MESES_MS);
+      const candidato = validoYReciente[0] || validoNadaMas[0] || recienteNadaMas[0] || (listaOrdenada.length ? listaOrdenada[0] : null);
+      return { cambia:true, nuevo: candidato ? candidato['Email'] : '' };
+    }
+
+    const output1 = [];
+    let output2 = [], output3 = [];
+    const excepciones = [], cuentasInternas = [], cambiosPais = [], avisos = [];
+    const totales = { AR:0, OTHERS:0, FUERA:0 };
+    const clases = { AR:{}, OTHERS:{} };
+    const sumar = (u, clase) => { clases[u][clase] = (clases[u][clase] || 0) + 1; };
+
+    accounts.forEach(accRow => {
+      const id = normId(accRow['ID']);
+      if(!id) return;
+      const paisDash = accRow['País'] || '';
+      const U = universoDePais(paisDash);
+      totales[U]++;
+      if(U === 'FUERA') return;
+
+      // Billing solo cuenta si es del mismo universo que la cuenta.
+      const billingCrudo = billingByAcc.get(id);
+      const billing = (billingCrudo && universoDePais(billingCrudo['País']) === U) ? billingCrudo : null;
+      const odooList = odooByRef.get(id);
+      const enlaceDash = 'https://dash.fu.do/accounts/' + id;
+      const adminRows = adminGroups.get(id) || [];
+      const adminsOrdenados = U === 'AR' ? ordenarAdminsAR(adminRows) : ordenarAdminsOT(adminRows);
+      const mejorAdmin = adminsOrdenados[0] || null;
+      const mailAdmin = mejorAdmin ? mejorAdmin['Email'] : '';
+      const paisOdooNombre = U === 'AR' ? 'Argentina' : normalizarPaisParaOdoo(paisDash);
+
+      // --- Exclusión previa: cuenta interna ---
+      const esComercialActiva = String(accRow['Estado comercial'] || '').trim().toLowerCase() === 'activo';
+      if(esComercialActiva && esDominioInterno(mailAdmin) && !EXCEPCIONES_CUENTA_INTERNA.has(id)){
+        cuentasInternas.push({ Universo: NOMBRE_UNIVERSO[U], Referencia: id, Nombre: accRow['Nombre'], 'Mail admin': mailAdmin, Link: enlaceDash });
+        sumar(U, 'interna');
+        return;
+      }
+
+      const log1 = (regla, accion, detalle, odooRow) => output1.push({
+        Universo: NOMBRE_UNIVERSO[U], Referencia: id, Nombre: accRow['Nombre'], País: paisOdooNombre,
+        'Código Billing': billing ? (billing['Código'] || '') : '', 'Razón social Billing': billing ? (billing['Razón social'] || '') : '',
+        'Situación Billing': billing ? (billing['Situación ante el impuesto'] || '') : '', 'Email Billing': billing ? (billing['Email'] || '') : '',
+        'NIF Odoo': odooRow ? (odooRow['NIF'] || '') : '',
+        Regla: regla, Acción: accion, Detalle: detalle || ''
+      });
+
+      // --- Referencia duplicada en Odoo: excepción para los dos universos ---
+      if(odooList && odooList.length > 1){
+        excepciones.push({ Universo: NOMBRE_UNIVERSO[U], Referencia: id, Motivo: 'Referencia duplicada en Odoo (' + odooList.length + ' contactos)', 'IDs Odoo': odooList.map(o => o['ID']).join(' / ') });
+        log1('Excepción', 'Revisión manual', 'Referencia duplicada en Odoo', null);
+        sumar(U, 'excepcion');
+        return;
+      }
+      const od = (odooList && odooList.length === 1) ? odooList[0] : null;
+
+      // --- Aviso de cambio de país (decisión 13: se avisa y se procesa igual) ---
+      if(od){
+        const paisOdoo = String(od['País'] || '').trim();
+        if(paisOdoo){
+          const uOdoo = universoDePais(paisOdoo);
+          const distinto = uOdoo !== U || (U === 'OTHERS' && normalizarTextoPais(paisOdoo) !== normalizarTextoPais(paisOdooNombre));
+          if(distinto) cambiosPais.push({ Universo: NOMBRE_UNIVERSO[U], Referencia: id, Nombre: accRow['Nombre'], 'País en Odoo': paisOdoo, 'País en Dash': paisDash, Link: enlaceDash });
+        }
+      }
+
+      const base = od ? { externalId: od['ExternalID'], referencia: id, nombre: od['Nombre'], nif: od['NIF'], tipo: od['TipoIdentificacion'],
+                          mail: od['Correo electrónico'], resp: od['Tipo de Responsabilidad AFIP'], enlace: od['Enlace a página web'] || enlaceDash,
+                          activo: true, universo: U } : null;
+      const upd = (cambios) => filaUpdate(Object.assign({}, base, cambios));
+
+      if(U === 'AR') procesarCuentaAR(); else procesarCuentaOT();
+
+      // ------------------------------------------------------------ perfil Argentina
+      function procesarCuentaAR(){
+        const cuitDash = billing ? normDigits(billing['Código']) : '';
+        if(cuitDash){
+          // --- Billing manda ---
+          if(!od){
+            const tipoIdent = billing['Tipo de identificación'] || 'CUIT';
+            const esDni = String(tipoIdent).trim().toUpperCase() === 'DNI';
+            output3.push(filaAlta({ nombre: billing['Razón social'], tipo: tipoIdent, nif: billing['Código'], domicilio: esDni ? billing['Domicilio'] : '', ciudad: esDni ? billing['Ciudad'] : '',
+              pais: 'Argentina', resp: AR_RESPONSABILIDAD_ALTAS, mail: billing['Email'] || mailAdmin, huboIntentoAdmin: !billing['Email'], referencia: id, enlace: enlaceDash, grupo: esDni ? 'DNI' : 'CUIT', universo: U }));
+            log1('5', 'Crear contacto', 'Alta directa con datos de Billing (' + (esDni ? 'DNI' : 'CUIT') + ')', null); sumar(U, 'crear');
+            return;
+          }
+          const nifOdoo = normDigits(od['NIF']);
+          const mailOdoo = normEmail(od['Correo electrónico']);
+          const mailDash = normEmail(billing['Email']);
+          const archivado = od['Activo'] === false;
+          if(nifOdoo === cuitDash){
+            // Decisión 4: si Billing no trae Email, se respeta el mail de Odoo.
+            if(!mailDash || mailOdoo === mailDash){
+              if(archivado){
+                output2.push(upd({ grupo: 'Reactivar', comentario: construirComentario(od['Correo electrónico'], false) }));
+                log1('1b', 'Reactivar contacto', 'Datos coinciden con Billing pero el contacto está archivado — desarchivar', od); sumar(U, 'reactivar');
+              } else {
+                log1('1', 'Sin acción', 'Validado OK', od); sumar(U, 'ok');
+              }
+            } else {
+              // Decisión 3: la Regla 2 reactiva si estaba archivado (Activo = TRUE siempre).
+              output2.push(upd({ mail: billing['Email'], grupo: 'Actualizar mail', comentario: construirComentario(billing['Email'], false) }));
+              log1('2', 'Actualizar mail', 'Mail actualizado en Odoo' + (archivado ? ' (estaba archivado, se reactiva)' : ''), od); sumar(U, 'actualizar');
+            }
+          } else if(nifOdoo){
+            const tipoAlta = billing['Tipo de identificación'] || 'CUIT';
+            const esDniAlta = String(tipoAlta).trim().toUpperCase() === 'DNI';
+            output2.push(upd({ referencia: id + '_old', enlace: (od['Enlace a página web'] || enlaceDash) + '_old', activo: false, grupo: 'Baja', comentario: '' }));
+            output3.push(filaAlta({ nombre: billing['Razón social'], tipo: tipoAlta, nif: billing['Código'], domicilio: esDniAlta ? billing['Domicilio'] : '', ciudad: esDniAlta ? billing['Ciudad'] : '',
+              pais: 'Argentina', resp: AR_RESPONSABILIDAD_ALTAS, mail: billing['Email'] || mailAdmin, huboIntentoAdmin: !billing['Email'], referencia: id, enlace: enlaceDash, grupo: '3a - alta', universo: U }));
+            log1('3a', 'Baja + Alta', 'NIF distinto de otra razón social', od); sumar(U, 'bajaAlta');
+          } else {
+            output2.push(upd({ nombre: billing['Razón social'], nif: billing['Código'], tipo: billing['Tipo de identificación'] || 'CUIT', mail: billing['Email'],
+              resp: mapSituacion(billing['Situación ante el impuesto']), grupo: 'Actualizar — NIF vacío', comentario: construirComentario(billing['Email'], false) }));
+            log1('3b', 'Actualizar contacto', 'NIF de Odoo estaba vacío, se completa con Billing' + (archivado ? ' (estaba archivado, se reactiva)' : ''), od); sumar(U, 'actualizar');
+          }
+          return;
+        }
+        // --- Sin Billing: Metabase como respaldo ---
+        const meta = metaByAcc.get(id);
+        if(meta){
+          if(od){
+            const archivado = od['Activo'] === false;
+            const cuitMeta = normDigits(meta['afip_settings_cuit']);
+            const nifOdoo = normDigits(od['NIF']);
+            const nifCoincide = !!(nifOdoo && cuitMeta && nifOdoo === cuitMeta);
+            const mailCoincide = normEmail(od['Correo electrónico']) === normEmail(mailAdmin);
+            if(nifCoincide && mailCoincide){
+              if(archivado){
+                output2.push(upd({ grupo: 'Reactivar', comentario: construirComentario(od['Correo electrónico'], false) }));
+                log1('1b', 'Reactivar contacto', 'CUIT y mail ya coinciden con Metabase, pero el contacto está archivado — desarchivar', od); sumar(U, 'reactivar');
+              } else {
+                log1('1', 'Sin acción', 'Validado OK vía Metabase (sin billing): CUIT y mail ya coinciden', od); sumar(U, 'ok');
+              }
+            } else {
+              const mailFinal = mailAdmin || od['Correo electrónico'];
+              output2.push(upd({ nif: cuitMeta || od['NIF'], tipo: cuitMeta ? 'CUIT' : od['TipoIdentificacion'], mail: mailFinal, grupo: 'Actualizar vía Metabase', comentario: construirComentario(mailFinal, !mailCoincide) }));
+              const cambios = []; if(!nifCoincide) cambios.push('CUIT'); if(!mailCoincide) cambios.push('mail');
+              log1('4a', 'Actualizar contacto (Metabase)', 'Sin billing, se corrige: ' + cambios.join(' y ') + (archivado ? ' (estaba archivado, se reactiva)' : ''), od); sumar(U, 'actualizar');
+            }
+          } else {
+            output3.push(filaAlta({ nombre: meta['afip_settings_social_name'], tipo: 'CUIT', nif: meta['afip_settings_cuit'], pais: 'Argentina', resp: AR_RESPONSABILIDAD_ALTAS,
+              mail: mailAdmin, huboIntentoAdmin: true, referencia: id, enlace: enlaceDash, grupo: '4b (Metabase)', universo: U }));
+            log1('4b', 'Crear contacto (Metabase)', 'Sin billing, alta con Metabase', null); sumar(U, 'crear');
+          }
+          return;
+        }
+        if(od){
+          // 2b (nombre, solo si el contacto NO tiene NIF — decisión 6) y 2c (mail admin vigente).
+          const nombreDash = String(accRow['Nombre'] || '').trim();
+          const nombreOdoo = String(od['Nombre'] || '').trim();
+          const sinNif = !String(od['NIF'] || '').trim();
+          const nombreCambio = !!(sinNif && nombreDash && nombreDash !== nombreOdoo);
+          const res = resolverMailMantenimientoAR(adminsOrdenados, od['Correo electrónico']);
+          const mailCambio = res.cambia && normEmail(res.nuevo) !== normEmail(od['Correo electrónico']);
+          if(nombreCambio || mailCambio){
+            const mailFinal = mailCambio ? res.nuevo : od['Correo electrónico'];
+            const grupo = nombreCambio && mailCambio ? 'Regla 2b/2c - Actualizar Nombre y Mail admin' : nombreCambio ? 'Actualizar nombre' : 'Actualizar mail admin';
+            output2.push(upd({ nombre: nombreCambio ? nombreDash : od['Nombre'], mail: mailFinal, grupo, comentario: construirComentario(mailFinal, mailCambio) }));
+            const detalle = (nombreCambio ? 'Nombre de cuenta cambió en Dash. ' : '') + (mailCambio ? 'El mail admin ya no es el vigente (cambió el administrador de la cuenta).' : '');
+            log1(nombreCambio && mailCambio ? '2b/2c' : (mailCambio ? '2c' : '2b'), 'Actualizar ' + (nombreCambio && mailCambio ? 'nombre y mail admin' : nombreCambio ? 'nombre' : 'mail admin'), detalle.trim(), od);
+            sumar(U, 'actualizar');
+          } else {
+            log1('Aprobado', 'Sin acción', 'Sin datos fiscales en Dash ni Metabase, ya cargado en Odoo y mail admin vigente', od); sumar(U, 'ok');
+          }
+          return;
+        }
+        output3.push(filaAlta({ nombre: accRow['Nombre'], tipo: 'Sigd', nif: '', pais: 'Argentina', resp: AR_RESPONSABILIDAD_ALTAS,
+          mail: mailAdmin, huboIntentoAdmin: true, referencia: id, enlace: enlaceDash, grupo: 'Sin datos (Sigd)', universo: U }));
+        log1('6', 'Crear contacto (Consumidor Final)', 'Sin billing ni Metabase, alta como Consumidor Final', null); sumar(U, 'crear');
+      }
+
+      // ------------------------------------------------------------ perfil Others
+      function procesarCuentaOT(){
+        const codigo = billing ? billing['Código'] : '';
+        const tieneAdmin = adminRows.length > 0;
+        if(billing && String(codigo || '').trim()){
+          if(od){
+            const nifOdoo = od['NIF'] || '';
+            const archivado = od['Activo'] === false;
+            if(coincideNifConCodigo(nifOdoo, codigo, paisDash)){
+              const mailBilling = normEmail(billing['Email']);
+              if(mailBilling && mailBilling !== normEmail(od['Correo electrónico'])){
+                // Decisión 3: la Regla 2 reactiva si estaba archivado.
+                output2.push(upd({ mail: billing['Email'], resp: OT_RESPONSABILIDAD, grupo: 'Regla 2 - Actualizar mail', comentario: construirComentario(billing['Email'], false) }));
+                log1('2', 'Actualizar mail', 'Mail Billing≠Odoo' + (archivado ? ' (estaba archivado, se reactiva)' : ''), od); sumar(U, 'actualizar');
+              } else if(archivado){
+                output2.push(upd({ resp: OT_RESPONSABILIDAD, grupo: 'Regla 1b - Reactivar', comentario: construirComentario(od['Correo electrónico'], false) }));
+                log1('1b', 'Reactivar', 'NIF y mail OK, estaba archivado', od); sumar(U, 'reactivar');
+              } else {
+                log1('1', 'Sin acción', 'NIF y mail OK, activo', od); sumar(U, 'ok');
+              }
+            } else if(!limpiarAlfanum(nifOdoo)){
+              const mailFinal = billing['Email'] || od['Correo electrónico'];
+              output2.push(upd({ nif: armarNifConPrefijo(codigo, paisDash), tipo: OT_TIPO_IDENTIFICACION, mail: mailFinal, resp: OT_RESPONSABILIDAD,
+                activo: !archivado, grupo: 'Regla 3b - Actualizar (NIF vacío)', comentario: construirComentario(mailFinal, false) }));
+              log1('3b', 'Actualizar mismo contacto', 'NIF estaba vacío, se completa con Billing', od); sumar(U, 'actualizar');
+            } else {
+              // Regla 3a: baja con sufijo _old (corrección 10) + alta nueva con datos de Billing.
+              output2.push(upd({ referencia: id + '_old', enlace: (od['Enlace a página web'] || enlaceDash) + '_old', activo: false, grupo: 'Regla 3a - Baja (cambio de identidad fiscal)', comentario: '' }));
+              output3.push(filaAlta({ nombre: billing['Razón social'] || accRow['Nombre'], domicilio: billing['Domicilio'], ciudad: billing['Ciudad'], pais: paisOdooNombre,
+                tipo: OT_TIPO_IDENTIFICACION, nif: armarNifConPrefijo(codigo, paisDash), resp: OT_RESPONSABILIDAD,
+                mail: billing['Email'] || mailAdmin, huboIntentoAdmin: !billing['Email'], referencia: id, enlace: enlaceDash, grupo: 'Regla 3a - Alta (nueva identidad fiscal)', universo: U }));
+              log1('3a', 'Baja + Alta', 'NIF Odoo cambió respecto a Billing', od); sumar(U, 'bajaAlta');
+            }
+          } else {
+            output3.push(filaAlta({ nombre: billing['Razón social'] || accRow['Nombre'], domicilio: billing['Domicilio'], ciudad: billing['Ciudad'], pais: paisOdooNombre,
+              tipo: OT_TIPO_IDENTIFICACION, nif: armarNifConPrefijo(codigo, paisDash), resp: OT_RESPONSABILIDAD,
+              mail: billing['Email'] || mailAdmin, huboIntentoAdmin: !billing['Email'], referencia: id, enlace: enlaceDash, grupo: 'Regla 5 - Alta directa (con Billing)', universo: U }));
+            log1('5', 'Alta nueva', 'No existía en Odoo, con datos de Billing', null); sumar(U, 'crear');
+          }
+          return;
+        }
+        // --- Sin Billing ---
+        if(od){
+          // 2b: el nombre de las altas sin Billing de Others es "ID/NombreDash" (decisión 5); solo si no tiene NIF (decisión 6).
+          const nombreEsperado = id + '/' + (accRow['Nombre'] || '');
+          const sinNif = !limpiarAlfanum(od['NIF']);
+          const cambioNombre = !!(sinNif && accRow['Nombre'] && nombreEsperado !== (od['Nombre'] || ''));
+          // 2c: el mail de Odoo es vigente si está en el reporte de admins, es válido y tiene login reciente.
+          const mailOdooActual = normEmail(od['Correo electrónico']);
+          const rowActual = adminRows.find(r => normEmail(r['Email']) === mailOdooActual);
+          const vigente = !!(rowActual && esMailValido(rowActual['Email']) && esRecienteOT(rowActual['Último login (UTC)']));
+          let cambioMail = false, mailNuevo = od['Correo electrónico'];
+          if(!vigente){
+            if(mejorAdmin){
+              const m = normEmail(mejorAdmin['Email']);
+              if(m && m !== mailOdooActual){ cambioMail = true; mailNuevo = mejorAdmin['Email']; }
+            } else if(!tieneAdmin){
+              avisos.push({ Universo: NOMBRE_UNIVERSO[U], Referencia: id, Nombre: accRow['Nombre'], Motivo: 'No tiene ningún mail admin (no se modificó el contacto)' });
+            }
+          }
+          if(cambioNombre || cambioMail){
+            const cambios = [];
+            if(cambioNombre) cambios.push('Nombre');
+            if(cambioMail) cambios.push('Mail admin');
+            output2.push(upd({ nombre: cambioNombre ? nombreEsperado : od['Nombre'], mail: mailNuevo, resp: OT_RESPONSABILIDAD, activo: od['Activo'] !== false,
+              grupo: 'Regla 2b/2c - Actualizar ' + cambios.join(' y '), comentario: construirComentario(mailNuevo, cambioMail) }));
+            log1(cambioNombre && cambioMail ? '2b/2c' : (cambioMail ? '2c' : '2b'), 'Actualizar ' + cambios.join(' y '), cambios.join(' y ') + ' cambió respecto a Odoo', od); sumar(U, 'actualizar');
+          } else {
+            log1('Aprobado', 'Sin acción', 'Sin Billing, ya existe en Odoo, sin cambios detectables', od); sumar(U, 'ok');
+          }
+          return;
+        }
+        output3.push(filaAlta({ nombre: id + '/' + (accRow['Nombre'] || ''), pais: paisOdooNombre, tipo: OT_TIPO_IDENTIFICACION, nif: '', resp: OT_RESPONSABILIDAD,
+          mail: mailAdmin, huboIntentoAdmin: true, referencia: id, enlace: enlaceDash, grupo: 'Regla 6 - Alta genérica (sin Billing)', universo: U }));
+        log1('6', 'Alta genérica', 'Sin Billing, no existía en Odoo', null); sumar(U, 'crear');
+      }
+    });
+
+    // Filas con problema de mail: salen de los archivos de importación y van al banner.
+    const revisiones = avisos.slice();
+    function extraerRevisiones(rows, origen){
+      const limpias = [];
+      rows.forEach(r => {
+        const c = r['Comentario (no importar)'];
+        if(c){ revisiones.push({ Universo: r['Universo (no importar)'], Referencia: r['Referencia'], Nombre: r['Nombre'], Motivo: '[' + origen + '] ' + c }); }
+        else { const copia = Object.assign({}, r); delete copia['Comentario (no importar)']; limpias.push(copia); }
+      });
+      return limpias;
+    }
+    output2 = extraerRevisiones(output2, 'Output 2');
+    output3 = extraerRevisiones(output3, 'Output 3');
+
+    const idsInvalidos = [];
+    marcarIdentificacionesInvalidas(output2, 'Output 2', idsInvalidos);
+    marcarIdentificacionesInvalidas(output3, 'Output 3', idsInvalidos);
+
+    return { output1, output2, output3, excepciones, cuentasInternas, cambiosPais, revisiones, idsInvalidos, totales, clases };
+  }
+  window.procesarDiccionario = procesarDiccionario; // expuesto para pruebas
+
+  document.getElementById('btn-process').addEventListener('click', function(){
+    const log = document.getElementById('proc-log');
+    log.textContent = 'Procesando...';
+
+    const res = procesarDiccionario({ accounts: state.accounts, billing: state.billing, odoo: state.odoo, admin: state.admin, metabase: state.metabase });
+    const { output1, output2, output3, excepciones, cuentasInternas, cambiosPais, revisiones, idsInvalidos, totales, clases } = res;
+
+    window.__vcBuckets = Object.assign(window.__vcBuckets || {}, { output1, output2, output3, excepciones, cuentasInternas, cambiosPais, revisiones });
+
+    const plural = (n, s, p) => n + ' ' + (n === 1 ? s : p);
+    const lista = (items, fmt) => '<ul style="margin:8px 0 0;padding-left:18px;font-weight:400;">' + items.map(x => '<li>' + fmt(x) + '</li>').join('') + '</ul>';
+    const tag = u => '<span style="font-size:11px;font-weight:700;opacity:.75;">[' + u + ']</span> ';
+
+    const bannerRevision = revisiones.length
+      ? '<div class="vc-note" style="background:#fef9c3;color:#854d0e;border-radius:8px;padding:10px 14px;margin:0 0 10px;font-weight:600;">⚠️ ' + plural(revisiones.length, 'cuenta necesita', 'cuentas necesitan') + ' revisión manual — no están en los archivos de importación:' +
+        lista(revisiones, r => tag(r.Universo) + '<strong>' + (r.Nombre || r.Referencia) + '</strong> (Ref. ' + r.Referencia + '): ' + r.Motivo) + '</div>'
+      : '';
+    const bannerCuit = idsInvalidos.length
+      ? '<div class="vc-note" style="background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;margin:0 0 10px;font-weight:600;">🔴 ' + plural(idsInvalidos.length, 'identificación inválida', 'identificaciones inválidas') + ' (CUIT / DNI) — están en los outputs con el NIF pintado en rojo. Verificalas (ej. en Nosis) y corregilas antes de importar: Odoo bloquea el archivo entero si hay alguna.' +
+        lista(idsInvalidos, c => '[' + c.Origen + '] <strong>' + (c.Nombre || c.Referencia) + '</strong> (Ref. ' + c.Referencia + '): ' + c.Tipo + ' ' + c.NIF + ' — ' + c.Motivo) + '</div>'
+      : '';
+    const bannerInternas = cuentasInternas.length
+      ? '<div class="vc-note" style="background:#e0e7ff;color:#3730a3;border-radius:8px;padding:10px 14px;margin:0 0 10px;font-weight:600;">🏢 ' + plural(cuentasInternas.length, 'cuenta interna excluida', 'cuentas internas excluidas') + ' del análisis (admin de dominio interno y Estado comercial Activo). No se crea ni se modifica nada en Odoo; el estado en Dash se cambia aparte.' +
+        lista(cuentasInternas, c => tag(c.Universo) + '<strong>' + (c.Nombre || c.Referencia) + '</strong> (' + c['Mail admin'] + ') — <a href="' + c.Link + '" target="_blank" style="color:#3730a3;">' + c.Link + '</a>') + '</div>'
+      : '';
+    const bannerPais = cambiosPais.length
+      ? '<div class="vc-note" style="background:#ffedd5;color:#9a3412;border-radius:8px;padding:10px 14px;margin:0 0 10px;font-weight:600;">🌎 ' + plural(cambiosPais.length, 'cuenta tiene', 'cuentas tienen') + ' un país en Odoo distinto al de Dash. Se procesaron igual con el país de Dash — revisá si el cambio es real o un error de carga:' +
+        lista(cambiosPais, c => tag(c.Universo) + '<strong>' + (c.Nombre || c.Referencia) + '</strong> (Ref. ' + c.Referencia + '): Odoo dice "' + c['País en Odoo'] + '", Dash dice "' + c['País en Dash'] + '" — <a href="' + c.Link + '" target="_blank" style="color:#9a3412;">' + c.Link + '</a>') + '</div>'
+      : '';
+
+    // Aviso de reportes filtrados por país (o de un universo que quedó vacío por cualquier otro motivo).
+    const problemasFiltro = [];
+    if(state.filtroPaisDash) problemasFiltro.push('El zip de Dash (Accounts) vino filtrado por País: <strong>' + state.filtroPaisDash + '</strong>.');
+    if(state.filtroPaisAdmin) problemasFiltro.push('El reporte admin_emails vino filtrado por País: <strong>' + state.filtroPaisAdmin + '</strong>.');
+    if(totales.AR === 0) problemasFiltro.push('No se procesó ninguna cuenta de <strong>Argentina</strong>.');
+    if(totales.OTHERS === 0) problemasFiltro.push('No se procesó ninguna cuenta de <strong>Others</strong>.');
+    const bannerFiltro = problemasFiltro.length
+      ? '<div class="vc-note" style="background:#991b1b;color:#fff;border-radius:8px;padding:10px 14px;margin:0 0 10px;font-weight:600;">⛔ La corrida no está completa — un universo quedó afuera o con datos parciales. Volvé a bajar los reportes de Dash y de admins SIN filtro de país y procesá de nuevo:' +
+        lista(problemasFiltro, x => x) + '</div>'
+      : '';
+
+    const n = (u, k) => (clases[u] && clases[u][k]) || 0;
+    const filaClases = u => {
+      const ok = n(u,'ok'), re = n(u,'reactivar'), ac = n(u,'actualizar'), ba = n(u,'bajaAlta'), cr = n(u,'crear'), ex = n(u,'excepcion'), it = n(u,'interna');
+      const suma = ok + re + ac + ba + cr + ex + it;
+      return '<tr><td><strong>' + NOMBRE_UNIVERSO[u] + '</strong></td><td>' + totales[u] + '</td><td>' + ok + '</td><td>' + re + '</td><td>' + ac + '</td><td>' + ba + '</td><td>' + cr + '</td><td>' + ex + '</td><td>' + it + '</td>' +
+        '<td>' + (suma === totales[u] ? '✅' : '❌ ' + suma) + '</td></tr>';
+    };
+    const tablaClases =
+      '<div class="vc-table-wrap" style="margin:0 0 10px;"><table class="vc-t"><thead><tr><th>Universo</th><th>Cuentas</th><th>OK, sin acción</th><th>Reactivar</th><th>Actualizar</th><th>Baja + Alta</th><th>Crear</th><th>Excepciones</th><th>Internas</th><th>Verificación</th></tr></thead><tbody>' +
+      filaClases('AR') + filaClases('OTHERS') + '</tbody></table></div>' +
+      '<p class="vc-note" style="margin:0 0 16px;">Fuera de alcance (Chile, México, Brasil y Colombia, tienen su propio proceso): ' + totales.FUERA + ' cuentas, no se procesan. ' +
+      'Verificación: en cada universo la suma de las clases tiene que dar el total de cuentas. Cada "Baja + Alta" genera una fila en el Output 2 y otra en el Output 3. Las cuentas en revisión manual se cuentan en su clase aunque su fila no esté en el archivo.</p>';
+
+    const totalProcesadas = totales.AR + totales.OTHERS;
+    const summary = document.getElementById('results');
+    summary.style.display = 'block';
+    summary.innerHTML =
+      bannerFiltro + bannerRevision + bannerCuit + bannerInternas + bannerPais +
+      '<div class="vc-summary">' +
+        '<div class="vc-metric" style="background:var(--naranja);"><span class="n" style="color:#fff;">' + totalProcesadas + '</span><span class="l" style="color:#fff;">Cuentas procesadas</span></div>' +
+        '<div class="vc-metric"><span class="n">' + totales.AR + '</span><span class="l">Argentina</span></div>' +
+        '<div class="vc-metric"><span class="n">' + totales.OTHERS + '</span><span class="l">Others</span></div>' +
+        '<div class="vc-metric"><span class="n" style="color:#854d0e;">' + output2.length + '</span><span class="l">Filas Output 2 (actualizar)</span></div>' +
+        '<div class="vc-metric"><span class="n" style="color:#7e22ce;">' + output3.length + '</span><span class="l">Filas Output 3 (altas)</span></div>' +
+        '<div class="vc-metric"><span class="n" style="color:#991b1b;">' + excepciones.length + '</span><span class="l">Excepciones</span></div>' +
+      '</div>' +
+      tablaClases +
+      section('output1', 'Output 1 — Análisis completo (backup)', output1, 'Una fila por cada cuenta procesada (Argentina y Others), con el universo, la regla y la acción aplicada. Guardalo como respaldo de cada corrida.', 'paid', 'Backup') +
+      section('output2', 'Output 2 — Actualizar contactos existentes en Odoo', output2, 'Reglas 1b, 2, 2b, 2c, 3a (baja), 3b y 4a de los dos universos, con columnas fijas. Al importar, mapeá "External ID" al campo External ID para que actualice en vez de crear. Las bajas de la 3a llevan la Referencia y el enlace con "_old". Las columnas "Grupo" y "Universo" no se importan. Las cuentas en revisión manual no están acá: mirá el banner amarillo.', 'pending', 'Actualizar') +
+      section('output3', 'Output 3 — Alta de contactos nuevos en Odoo', output3, 'Reglas 3a (alta), 4b, 5 y 6 de los dos universos. Sin columna ID: Odoo los crea como contactos nuevos. Las columnas "Grupo" y "Universo" no se importan.', 'refunded', 'Alta') +
+      section('excepciones', 'Excepciones (Referencia duplicada en Odoo)', excepciones, 'Quedan fuera de los outputs 2 y 3: requieren revisión manual.', 'cancelled', 'Excepción') +
+      (cambiosPais.length ? section('cambiosPais', 'Cambios de país (Odoo vs Dash)', cambiosPais, 'Se procesaron igual con el país de Dash. Revisar a mano.', 'pending', 'Aviso') : '');
+
+    log.textContent = 'Listo — ' + totalProcesadas + ' cuentas procesadas (' + totales.AR + ' Argentina, ' + totales.OTHERS + ' Others).';
+  });
+
+  // --- Etapa 2 · Dash: importar contactos que Odoo ya tiene pero Dash todavía no ---
+  function mapSituacionInversa(raw){
+    if(!raw) return '';
+    const s = String(raw).trim().toLowerCase();
+    const map = {
+      'iva responsable inscripto': 'Responsable inscripto',
+      'responsable monotributo': 'Monotributo',
+      'consumidor final': 'Consumidor final',
+      'iva sujeto exento': 'Exento'
+    };
+    return map[s] || raw;
+  }
+
+  document.getElementById('btn-process-2').addEventListener('click', function(){
+    const log2 = document.getElementById('proc-log-2');
+    log2.textContent = 'Procesando...';
+
+    const billingByAcc2 = new Map();
+    state2.billing.forEach(r => {
+      if((r['País']||'').trim() !== 'Argentina') return;
+      const id = normId(r['ID']);
+      if(id) billingByAcc2.set(id, r);
+    });
+
+    const accountsByAcc2 = new Map();
+    state2.accounts.forEach(r => {
+      if((r['País']||'').trim() !== 'Argentina') return;
+      const id = normId(r['ID']);
+      if(id) accountsByAcc2.set(id, r);
+    });
+
+    const odooByRef2 = new Map();
+    state2.odoo.forEach(r => {
+      const refRaw = String(r['Referencia'] || '').trim();
+      if(/_old$/i.test(refRaw)) return;
+      if(r['Activo'] === false) return;
+      const ref = normId(refRaw);
+      if(!ref) return;
+      if(!odooByRef2.has(ref)) odooByRef2.set(ref, r); // si hay duplicados, se queda con el primero
+    });
+
+    const CAMPOS_DASH = ['ID','Tipo de identificación','Código','Razón social','Ciudad','Estado','Domicilio','Situación ante el impuesto','Email','Código postal'];
+    const completos = [], incompletos = [];
+
+    // Limpieza de texto para que no rompa el CSV de Dash: saca comillas y cambia comas por punto y coma.
+    function limpiarTextoDash(v){
+      return String(v == null ? '' : v).replace(/["']/g, '').replace(/,/g, ';');
+    }
+    // La Razón social va sin ";" (Odoo a veces trae uno en el nombre): se saca también la coma, se
+    // reemplazan ambos por un espacio y se limpian los espacios dobles.
+    function limpiarRazonSocialDash(v){
+      return String(v == null ? '' : v).replace(/["']/g, '').replace(/[;,]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    odooByRef2.forEach((odoo, id) => {
+      // La cuenta tiene que existir en el reporte de Accounts (activas) — si no está ahí,
+      // no corresponde tocar nada en Dash, aunque Odoo tenga el NIF cargado.
+      if(!accountsByAcc2.has(id)) return;
+
+      const nif = String(odoo['NIF'] || '').trim();
+      if(!nif) return; // sin NIF en Odoo, no hay nada para pasar a Dash
+
+      const billing = billingByAcc2.get(id);
+      const billingTieneCodigo = billing && String(billing['Código'] || '').trim();
+      if(billingTieneCodigo) return; // Dash ya tiene el dato, no hace falta importar nada
+
+      // Si Odoo dice "Consumidor Final" pero ya tiene un NIF real cargado, es una inconsistencia —
+      // se corrige a Monotributo (la situación más común en estos casos).
+      let situacion = mapSituacionInversa(odoo['Tipo de Responsabilidad AFIP']);
+      if(situacion.trim().toLowerCase() === 'consumidor final') situacion = 'Monotributo';
+
+      const fila = {
+        'ID': id,
+        'Tipo de identificación': limpiarTextoDash(odoo['TipoIdentificacion']),
+        'Código': limpiarTextoDash(nif),
+        'Razón social': limpiarRazonSocialDash(odoo['Nombre']),
+        'Ciudad': limpiarTextoDash(findKeyCI(odoo, 'Ciudad')),
+        'Estado': limpiarTextoDash(limpiarSufijoAR(findKeyCIAny(odoo, NOMBRES_PROVINCIA))),
+        'Domicilio': limpiarTextoDash(findKeyCI(odoo, 'Calle')),
+        'Situación ante el impuesto': limpiarTextoDash(situacion),
+        'Email': limpiarTextoDash(odoo['Correo electrónico']),
+        'Código postal': limpiarTextoDash(findKeyCI(odoo, 'C.P.') || findKeyCI(odoo, 'CP') || findKeyCI(odoo, 'Código postal'))
+      };
+
+      let faltaAlgo = false;
+      const filaMarcada = {};
+      CAMPOS_DASH.forEach(campo => {
+        const val = fila[campo];
+        if(val === undefined || val === null || String(val).trim() === ''){
+          filaMarcada[campo] = '⚠ FALTA ' + campo.toUpperCase();
+          faltaAlgo = true;
+        } else {
+          filaMarcada[campo] = val;
+        }
+      });
+
+      if(faltaAlgo){ incompletos.push(filaMarcada); }
+      else { completos.push(fila); }
+    });
+
+    window.__vcBuckets = window.__vcBuckets || {};
+    window.__vcBuckets['dash_completos'] = completos;
+    window.__vcBuckets['dash_incompletos'] = incompletos;
+
+    const results2 = document.getElementById('results-2');
+    results2.style.display = 'block';
+    const banner2 = incompletos.length > 0
+      ? '<p class="vc-note" style="background:#fef9c3;color:#854d0e;border-radius:8px;padding:10px 14px;margin:0 0 14px;font-weight:600;">⚠️ ' + incompletos.length + ' cuenta' + (incompletos.length===1?'':'s') + ' con datos incompletos — revisar antes de importar.</p>'
+      : '';
+    results2.innerHTML =
+      banner2 +
+      '<div class="vc-summary">' +
+        '<div class="vc-metric" style="background:var(--naranja);"><span class="n" style="color:#fff;">' + (completos.length + incompletos.length) + '</span><span class="l" style="color:#fff;">Cuentas a importar a Dash</span></div>' +
+        '<div class="vc-metric"><span class="n" style="color:#15803d;">' + completos.length + '</span><span class="l">Listas para importar</span></div>' +
+        '<div class="vc-metric"><span class="n" style="color:#854d0e;">' + incompletos.length + '</span><span class="l">Con datos faltantes</span></div>' +
+      '</div>' +
+      sectionCsv('dash_completos', 'Import a Dash — listas para importar', completos, 'CSV separado por comas, con las 9 columnas que pide Dash. Todos los campos están completos.', 'paid', 'Completo') +
+      sectionCsv('dash_incompletos', 'Revisar antes de importar', incompletos, 'Cada celda vacía quedó marcada con el campo que falta (ej. "FALTA CIUDAD"). Completá a mano en Odoo o Dash y volvé a correr el análisis.', 'cancelled', 'Incompleto');
+
+    log2.textContent = 'Listo — ' + (completos.length + incompletos.length) + ' cuentas para Dash.';
+  });
+
+  // Panel de reglas: de solo lectura, cambia según la solapa activa.
+  let etapaActiva = 1;
+  function renderReglas(){
+    const cont = document.getElementById('reglas-cards');
+    const reglas = etapaActiva === 1 ? REGLAS_ETAPA1 : REGLAS_ETAPA2;
+    cont.innerHTML = reglas.map(r =>
+      '<div class="vc-rule-card"><h4>' + r.titulo + '</h4><p>' + r.texto + '</p></div>'
+    ).join('');
+  }
+
+  const SHEET_PROXIMAMENTE_URL = 'https://docs.google.com/spreadsheets/d/1e6qAnhdD1PQefr--q0vfg-6tp1dechYXiNKY0lldV8M/gviz/tq?tqx=out:csv&gid=0';
+  let proximamenteCargado = false;
+
+  window.cargarProximamente = async function(){
+    const status = document.getElementById('proximamente-status');
+    const cont = document.getElementById('proximamente-cards');
+    status.textContent = 'Cargando desde Google Sheets...';
+    try{
+      const resp = await fetch(SHEET_PROXIMAMENTE_URL);
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const text = await resp.text();
+      const filas = parseCsvRows(text, ',');
+      if(!filas.length){
+        cont.innerHTML = '<p class="vc-note">El Sheet no tiene filas todavía.</p>';
+      } else {
+        cont.innerHTML = filas.map(f => {
+          const titulo = f['Título'] || f['Titulo'] || '(sin título)';
+          const concepto = f['Concepto'] || '';
+          const importante = f['Importante'] || '';
+          return '<div class="vc-rule-card"><h4>' + titulo + '</h4><p>' + concepto + '</p>' +
+            (importante ? '<p style="margin-top:6px;color:var(--naranja);font-weight:600;">⚠ ' + importante + '</p>' : '') +
+            '</div>';
+        }).join('');
+      }
+      status.textContent = '';
+      proximamenteCargado = true;
+    } catch(err){
+      status.textContent = '';
+      cont.innerHTML = '<p class="vc-note" style="background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;">No se pudo cargar el Sheet (' + err.message + '). ' +
+        'Si el error es de CORS, hace falta publicarlo: en el Sheet, andá a <strong>Archivo → Compartir → Publicar en la web</strong> (es distinto de "Compartir" común), publicá la hoja como CSV, y avisá para actualizar el link acá.</p>';
+    }
+  };
+
+  window.vcSetCompania = function(valor){
+    document.getElementById('etapa1-comandarina_srl').style.display = valor === 'comandarina_srl' ? '' : 'none';
+    document.getElementById('etapa1-proximamente').style.display = valor === 'comandarina_srl' ? 'none' : '';
+  };
+
+  window.vcSetEtapa = function(n){
+    etapaActiva = n;
+    document.getElementById('tab-etapa1').classList.toggle('active', n === 1);
+    document.getElementById('tab-etapa2').classList.toggle('active', n === 2);
+    document.getElementById('tab-etapa3').classList.toggle('active', n === 3);
+    document.getElementById('etapa1-panel').style.display = n === 1 ? '' : 'none';
+    document.getElementById('etapa2-panel').style.display = n === 2 ? '' : 'none';
+    document.getElementById('etapa3-panel').style.display = n === 3 ? '' : 'none';
+    document.getElementById('sec-reglas-wrap').style.display = n === 3 ? 'none' : '';
+    if(n !== 3) renderReglas();
+    else if(!proximamenteCargado) cargarProximamente();
+  };
+
+  renderReglas();
+})();
+</script>
+<link rel="stylesheet" href="/tools/embebido.css">
+<script src="/tools/embebido.js"></script>
+</body>
+</html>
